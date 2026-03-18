@@ -16,22 +16,23 @@ export default function PaymentMethodForm({ paymentMethod, onSubmit, onCancel })
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="payment-form">
-      <div className="form-group">
-        <label htmlFor="card_type">Card Type</label>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className={`form-group ${errors.card_type ? 'has-error' : ''}`}>
+        <label htmlFor="card_type">Card type</label>
         <select id="card_type" {...register('card_type', { required: 'Card type is required' })}>
           <option value="visa">Visa</option>
           <option value="mastercard">Mastercard</option>
           <option value="amex">American Express</option>
           <option value="discover">Discover</option>
         </select>
-        {errors.card_type && <span className="error">{errors.card_type.message}</span>}
+        {errors.card_type && <span className="field-error">{errors.card_type.message}</span>}
       </div>
 
-      <div className="form-group">
-        <label htmlFor="last_four_digits">Last 4 Digits</label>
+      <div className={`form-group ${errors.last_four_digits ? 'has-error' : ''}`}>
+        <label htmlFor="last_four_digits">Last 4 digits</label>
         <input
           id="last_four_digits"
+          placeholder="1234"
           maxLength={4}
           {...register('last_four_digits', {
             required: 'Last 4 digits are required',
@@ -39,57 +40,59 @@ export default function PaymentMethodForm({ paymentMethod, onSubmit, onCancel })
           })}
         />
         {errors.last_four_digits && (
-          <span className="error">{errors.last_four_digits.message}</span>
+          <span className="field-error">{errors.last_four_digits.message}</span>
         )}
       </div>
 
       <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="expiry_month">Expiry Month</label>
+        <div className={`form-group ${errors.expiry_month ? 'has-error' : ''}`}>
+          <label htmlFor="expiry_month">Expiry month</label>
           <input
             id="expiry_month"
             type="number"
             min="1"
             max="12"
+            placeholder="MM"
             {...register('expiry_month', {
               required: 'Required',
-              min: { value: 1, message: 'Invalid' },
-              max: { value: 12, message: 'Invalid' },
+              min: { value: 1, message: 'Invalid month' },
+              max: { value: 12, message: 'Invalid month' },
               valueAsNumber: true,
             })}
           />
-          {errors.expiry_month && <span className="error">{errors.expiry_month.message}</span>}
+          {errors.expiry_month && <span className="field-error">{errors.expiry_month.message}</span>}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="expiry_year">Expiry Year</label>
+        <div className={`form-group ${errors.expiry_year ? 'has-error' : ''}`}>
+          <label htmlFor="expiry_year">Expiry year</label>
           <input
             id="expiry_year"
             type="number"
             min={new Date().getFullYear()}
+            placeholder="YYYY"
             {...register('expiry_year', {
               required: 'Required',
-              min: { value: new Date().getFullYear(), message: 'Card expired' },
+              min: { value: new Date().getFullYear(), message: 'Card is expired' },
               valueAsNumber: true,
             })}
           />
-          {errors.expiry_year && <span className="error">{errors.expiry_year.message}</span>}
+          {errors.expiry_year && <span className="field-error">{errors.expiry_year.message}</span>}
         </div>
       </div>
 
       <div className="form-group checkbox">
         <label>
           <input type="checkbox" {...register('is_default')} />
-          Set as default
+          Set as default payment method
         </label>
       </div>
 
       <div className="form-actions">
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save'}
+        <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSubmitting}>
+          {isSubmitting ? 'Saving…' : paymentMethod ? 'Save changes' : 'Add card'}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel}>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
             Cancel
           </button>
         )}
