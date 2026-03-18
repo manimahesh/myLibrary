@@ -4,6 +4,7 @@ export default function PaymentMethodForm({ paymentMethod, onSubmit, onCancel })
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: paymentMethod || {
@@ -16,7 +17,7 @@ export default function PaymentMethodForm({ paymentMethod, onSubmit, onCancel })
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className={`form-group ${errors.card_type ? 'has-error' : ''}`}>
         <label htmlFor="card_type">Card type</label>
         <select id="card_type" {...register('card_type', { required: 'Card type is required' })}>
@@ -68,11 +69,17 @@ export default function PaymentMethodForm({ paymentMethod, onSubmit, onCancel })
           <input
             id="expiry_year"
             type="number"
-            min={new Date().getFullYear()}
             placeholder="YYYY"
             {...register('expiry_year', {
               required: 'Required',
-              min: { value: new Date().getFullYear(), message: 'Card is expired' },
+              validate: (year) => {
+                const now = new Date();
+                const month = getValues('expiry_month');
+                if (year < now.getFullYear() || (year === now.getFullYear() && month <= now.getMonth())) {
+                  return 'Card expired';
+                }
+                return true;
+              },
               valueAsNumber: true,
             })}
           />
