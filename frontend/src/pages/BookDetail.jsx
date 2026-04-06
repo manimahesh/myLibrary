@@ -13,7 +13,7 @@ function IconBook() {
   );
 }
 
-function StarDisplay({ rating, count }) {
+function StarDisplay({ rating, count = 0 }) {
   return (
     <div className="book-detail-rating">
       <div className="stars-display">
@@ -21,7 +21,7 @@ function StarDisplay({ rating, count }) {
           <span key={star} className={star <= Math.round(rating) ? 'star-filled' : 'star-empty'}>★</span>
         ))}
       </div>
-      {rating && <span className="rating-count">{rating.toFixed(1)} ({count} ratings)</span>}
+      {rating != null && <span className="rating-count">{Number(rating).toFixed(1)} ({count} ratings)</span>}
     </div>
   );
 }
@@ -63,6 +63,9 @@ export default function BookDetail() {
 
   useEffect(() => {
     let active = true;
+    setAdded(false);
+    setWishlistError('');
+    setAdding(false);
 
     async function loadBook() {
       setLoading(true);
@@ -159,7 +162,7 @@ export default function BookDetail() {
               )}
             </div>
 
-            {book.averageRating && (
+            {book.averageRating != null && (
               <StarDisplay rating={book.averageRating} count={book.ratingsCount} />
             )}
 
@@ -187,7 +190,7 @@ export default function BookDetail() {
           </div>
         )}
 
-        {book.averageRating && (
+        {book.averageRating != null && (
           <div className="book-detail-reviews">
             <h3>Reader Reviews</h3>
             <div className="reviews-summary">
