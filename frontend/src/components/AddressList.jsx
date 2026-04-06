@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import AddressForm from './AddressForm';
 
@@ -27,18 +27,18 @@ export default function AddressList() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     try {
       const res = await api.get('/addresses');
       setAddresses(res.data.addresses);
     } catch {
       setError('Failed to load addresses');
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAddresses();
-  }, []);
+  }, [fetchAddresses]);
 
   async function handleCreate(data) {
     try {

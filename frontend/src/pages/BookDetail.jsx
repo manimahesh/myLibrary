@@ -62,21 +62,24 @@ export default function BookDetail() {
   const [wishlistError, setWishlistError] = useState('');
 
   useEffect(() => {
-    loadBook();
-  }, [id]);
+    let active = true;
 
-  async function loadBook() {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.get(`/books/${encodeURIComponent(id)}`);
-      setBook(res.data.book);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load book details.');
-    } finally {
-      setLoading(false);
+    async function loadBook() {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await api.get(`/books/${encodeURIComponent(id)}`);
+        if (active) setBook(res.data.book);
+      } catch (err) {
+        if (active) setError(err.response?.data?.error || 'Failed to load book details.');
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }
+
+    loadBook();
+    return () => { active = false; };
+  }, [id]);
 
   async function handleAddToWishlist() {
     setAdding(true);

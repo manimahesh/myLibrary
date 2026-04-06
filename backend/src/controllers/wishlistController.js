@@ -46,7 +46,6 @@ async function add(req, res) {
 
 async function updateRating(req, res) {
   try {
-    // Validate UUID format
     if (!isValidUUID(req.params.id)) {
       return res.status(400).json({ error: 'Invalid wishlist item id' });
     }
@@ -70,7 +69,6 @@ async function updateRating(req, res) {
 
 async function remove(req, res) {
   try {
-    // Validate UUID format
     if (!isValidUUID(req.params.id)) {
       return res.status(400).json({ error: 'Invalid wishlist item id' });
     }
