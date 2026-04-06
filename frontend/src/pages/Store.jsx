@@ -49,6 +49,18 @@ export default function Store() {
   const [curatedError, setCuratedError] = useState('');
   const [searchError, setSearchError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [wishlistIds, setWishlistIds] = useState(new Set());
+
+  // Pre-fetch wishlist so BookCards can reflect existing state immediately
+  useEffect(() => {
+    api.get('/wishlist')
+      .then(res => setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))))
+      .catch(() => {});
+  }, []);
+
+  function handleAddedToWishlist(bookId) {
+    setWishlistIds(prev => new Set([...prev, bookId]));
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -122,7 +134,7 @@ export default function Store() {
           {searchResults.length > 0 && (
             <div className="books-grid">
               {searchResults.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
               ))}
             </div>
           )}
@@ -138,7 +150,7 @@ export default function Store() {
           ) : nytBooks.length > 0 ? (
             <div className="books-grid">
               {nytBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
               ))}
             </div>
           ) : !nytError && (
@@ -158,7 +170,7 @@ export default function Store() {
           ) : curatedBooks.length > 0 ? (
             <div className="books-grid">
               {curatedBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
               ))}
             </div>
           ) : !curatedError && (

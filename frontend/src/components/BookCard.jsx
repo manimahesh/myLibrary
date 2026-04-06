@@ -2,22 +2,27 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-export default function BookCard({ book }) {
+export default function BookCard({ book, inWishlist = false, onAdded }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState('');
 
+  const isInWishlist = inWishlist || added;
+
   async function handleAddToWishlist(e) {
     e.stopPropagation();
+    if (isInWishlist) return;
     setAdding(true);
     setError('');
     try {
       await api.post('/wishlist', { book_id: book.id });
       setAdded(true);
+      onAdded?.(book.id);
     } catch (err) {
       if (err.response?.status === 409) {
         setAdded(true);
+        onAdded?.(book.id);
       } else {
         setError(err.response?.data?.error || 'Failed to add');
       }
@@ -53,10 +58,10 @@ export default function BookCard({ book }) {
         <button
           className="btn btn-primary btn-sm"
           onClick={handleAddToWishlist}
-          disabled={adding || added}
+          disabled={adding || isInWishlist}
           style={{ marginTop: 'auto' }}
         >
-          {added ? 'In Wishlist' : adding ? 'Adding...' : '+ Wishlist'}
+          {isInWishlist ? 'In Wishlist' : adding ? 'Adding...' : '+ Wishlist'}
         </button>
       </div>
     </div>

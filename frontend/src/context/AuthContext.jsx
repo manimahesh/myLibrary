@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+// Note: token is read from localStorage synchronously so loading is always false on first render
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -6,7 +7,8 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  // Auth init is synchronous (localStorage read), so loading is never truly pending
+  const loading = false;
 
   useEffect(() => {
     if (token) {
@@ -14,7 +16,6 @@ export function AuthProvider({ children }) {
     } else {
       localStorage.removeItem('token');
     }
-    setLoading(false);
   }, [token]);
 
   async function register(email, password) {
