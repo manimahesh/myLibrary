@@ -17,7 +17,7 @@ export default function Login() {
     setServerError('');
     try {
       await login(data.email, data.password);
-      navigate('/profile');
+      navigate('/store');
     } catch (err) {
       setServerError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     }
