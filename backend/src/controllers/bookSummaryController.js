@@ -27,6 +27,11 @@ async function create(req, res) {
       return res.status(400).json({ error: error.details[0].message });
     }
 
+    const existing = await BookSummary.findByUserAndBook(req.user.userId, value.book_id);
+    if (existing) {
+      return res.status(409).json({ error: 'Summary already exists for this book' });
+    }
+
     const summary = await BookSummary.create(req.user.userId, value.book_id, value.summary_text);
     res.status(201).json({ summary });
   } catch (err) {

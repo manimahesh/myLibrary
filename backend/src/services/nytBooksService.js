@@ -10,13 +10,13 @@ async function getTop10Books(listName = 'hardcover-fiction') {
   }
   const data = await response.json();
   const books = data.results?.books || [];
-  return books.slice(0, 10).map((book) => ({
-    id: `isbn:${book.primary_isbn13}`,
+  return books.slice(0, 10).map((book, index) => ({
+    id: book.primary_isbn13 ? `isbn:${book.primary_isbn13}` : `nyt-rank:${book.rank || index}`,
     title: book.title,
     author: book.author,
     thumbnail: book.book_image || null,
     description: book.description || '',
-    isbn13: book.primary_isbn13,
+    isbn13: book.primary_isbn13 || null,
     rank: book.rank,
   }));
 }

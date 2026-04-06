@@ -31,7 +31,14 @@ export default function BookCard({ book }) {
   }
 
   return (
-    <div className="book-card" onClick={handleCardClick}>
+    <div
+      className="book-card"
+      onClick={handleCardClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(); }}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${book.title}`}
+    >
       <div className="book-card-cover-wrap">
         {book.thumbnail ? (
           <img src={book.thumbnail} alt={book.title} className="book-card-cover" />
