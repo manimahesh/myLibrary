@@ -40,25 +40,23 @@ export default function PaymentMethodList() {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchMethods();
-  }, []);
+    let cancelled = false;
+    api.get('/payments')
+      .then(res => { if (!cancelled) setMethods(res.data.payment_methods); })
+      .catch(() => { if (!cancelled) setError('Failed to load payment methods'); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-  async function fetchMethods() {
-    try {
-      const res = await api.get('/payments');
-      setMethods(res.data.payment_methods);
-    } catch {
-      setError('Failed to load payment methods');
-    }
-  }
+  function refetch() { setRefreshKey(k => k + 1); }
 
   async function handleCreate(data) {
     try {
       await api.post('/payments', data);
       setShowForm(false);
-      fetchMethods();
+      refetch();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add payment method');
     }
@@ -68,7 +66,7 @@ export default function PaymentMethodList() {
     try {
       await api.put(`/payments/${editing.id}`, data);
       setEditing(null);
-      fetchMethods();
+      refetch();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update payment method');
     }
@@ -79,7 +77,7 @@ export default function PaymentMethodList() {
     if (!method) return;
     try {
       await api.put(`/payments/${id}`, { ...method, is_default: true });
-      fetchMethods();
+      refetch();
     } catch {
       setError('Failed to set default');
     }
@@ -88,7 +86,7 @@ export default function PaymentMethodList() {
   async function handleDelete(id) {
     try {
       await api.delete(`/payments/${id}`);
-      fetchMethods();
+      refetch();
     } catch {
       setError('Failed to delete payment method');
     }

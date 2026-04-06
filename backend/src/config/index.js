@@ -13,4 +13,6 @@ module.exports = {
     secret: process.env.JWT_SECRET || 'change-this-in-production',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
+  nytApiKey: process.env.NYT_API_KEY || '',
+  googleBooksApiKey: process.env.GOOGLE_BOOKS_API_KEY || '',
 };

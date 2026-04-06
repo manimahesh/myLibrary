@@ -26,25 +26,23 @@ export default function AddressList() {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchAddresses();
-  }, []);
+    let cancelled = false;
+    api.get('/addresses')
+      .then(res => { if (!cancelled) setAddresses(res.data.addresses); })
+      .catch(() => { if (!cancelled) setError('Failed to load addresses'); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-  async function fetchAddresses() {
-    try {
-      const res = await api.get('/addresses');
-      setAddresses(res.data.addresses);
-    } catch {
-      setError('Failed to load addresses');
-    }
-  }
+  function refetch() { setRefreshKey(k => k + 1); }
 
   async function handleCreate(data) {
     try {
       await api.post('/addresses', data);
       setShowForm(false);
-      fetchAddresses();
+      refetch();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create address');
     }
@@ -54,7 +52,7 @@ export default function AddressList() {
     try {
       await api.put(`/addresses/${editing.id}`, data);
       setEditing(null);
-      fetchAddresses();
+      refetch();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update address');
     }
@@ -63,7 +61,7 @@ export default function AddressList() {
   async function handleDelete(id) {
     try {
       await api.delete(`/addresses/${id}`);
-      fetchAddresses();
+      refetch();
     } catch {
       setError('Failed to delete address');
     }
