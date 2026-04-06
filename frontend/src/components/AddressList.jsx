@@ -27,18 +27,18 @@ export default function AddressList() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
-
-  async function fetchAddresses() {
+  const fetchAddresses = async () => {
     try {
       const res = await api.get('/addresses');
       setAddresses(res.data.addresses);
     } catch {
       setError('Failed to load addresses');
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
 
   async function handleCreate(data) {
     try {

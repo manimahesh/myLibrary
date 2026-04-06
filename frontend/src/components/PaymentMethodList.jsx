@@ -41,18 +41,18 @@ export default function PaymentMethodList() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchMethods();
-  }, []);
-
-  async function fetchMethods() {
+  const fetchMethods = async () => {
     try {
       const res = await api.get('/payments');
       setMethods(res.data.payment_methods);
     } catch {
       setError('Failed to load payment methods');
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchMethods();
+  }, []);
 
   async function handleCreate(data) {
     try {

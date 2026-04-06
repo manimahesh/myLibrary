@@ -58,7 +58,13 @@ export default function Wishlist() {
   async function loadWishlist() {
     try {
       const res = await api.get('/wishlist');
-      setWishlist(res.data.wishlist);
+      // Validate and normalize the payload to ensure it's always an array
+      const wishlistData = res.data.wishlist;
+      if (Array.isArray(wishlistData)) {
+        setWishlist(wishlistData);
+      } else {
+        setWishlist([]);
+      }
     } catch {
       setError('Failed to load wishlist.');
     } finally {

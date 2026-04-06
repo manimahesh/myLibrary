@@ -8,12 +8,28 @@ async function searchBooks(query, maxResults = 12) {
     maxResults: String(maxResults),
     key: config.googleBooksApiKey,
   });
-  const response = await fetch(`${GOOGLE_BASE_URL}/volumes?${params}`);
-  if (!response.ok) {
-    throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(`${GOOGLE_BASE_URL}/volumes?${params}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return (data.items || []).map(normalizeVolume);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Google Books API request timeout');
+    }
+    throw err;
   }
-  const data = await response.json();
-  return (data.items || []).map(normalizeVolume);
 }
 
 async function getBookDetails(bookId) {
@@ -25,12 +41,28 @@ async function getBookDetails(bookId) {
   }
 
   const url = `${GOOGLE_BASE_URL}/volumes/${encodeURIComponent(bookId)}?key=${config.googleBooksApiKey}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return normalizeVolume(data);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Google Books API request timeout');
+    }
+    throw err;
   }
-  const data = await response.json();
-  return normalizeVolume(data);
 }
 
 function normalizeVolume(volume) {

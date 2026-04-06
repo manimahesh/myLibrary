@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import DOMPurify from 'dompurify';
 
 function IconBook() {
   return (
@@ -179,7 +180,7 @@ export default function BookDetail() {
         {book.description && (
           <div className="book-detail-description">
             <h3>About this book</h3>
-            <p dangerouslySetInnerHTML={{ __html: book.description }} />
+            <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(book.description) }} />
           </div>
         )}
 

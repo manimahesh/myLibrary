@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -37,12 +37,7 @@ export default function WishlistItem({ item, onRemoved }) {
   const [savingSum, setSavingSum] = useState(false);
   const [removing, setRemoving] = useState(false);
 
-  useEffect(() => {
-    loadBook();
-    loadSummary();
-  }, [item.book_id]);
-
-  async function loadBook() {
+  const loadBook = useCallback(async () => {
     try {
       const res = await api.get(`/books/${encodeURIComponent(item.book_id)}`);
       setBook(res.data.book);
@@ -51,9 +46,9 @@ export default function WishlistItem({ item, onRemoved }) {
     } finally {
       setBookLoading(false);
     }
-  }
+  }, [item.book_id]);
 
-  async function loadSummary() {
+  const loadSummary = useCallback(async () => {
     try {
       const res = await api.get(`/summaries/${encodeURIComponent(item.book_id)}`);
       setSummary(res.data.summary);
@@ -63,7 +58,12 @@ export default function WishlistItem({ item, onRemoved }) {
     } finally {
       setSummaryLoading(false);
     }
-  }
+  }, [item.book_id]);
+
+  useEffect(() => {
+    loadBook();
+    loadSummary();
+  }, [loadBook, loadSummary]);
 
   async function handleRatingChange(newRating) {
     setRating(newRating);

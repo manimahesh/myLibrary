@@ -6,7 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -14,7 +14,6 @@ export function AuthProvider({ children }) {
     } else {
       localStorage.removeItem('token');
     }
-    setLoading(false);
   }, [token]);
 
   async function register(email, password) {
