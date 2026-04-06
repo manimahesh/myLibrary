@@ -51,31 +51,36 @@ export default function Store() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadNytTop() {
+      try {
+        const res = await api.get('/books/nyt-top', { signal: controller.signal });
+        setNytBooks(res.data.books);
+      } catch (err) {
+        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+        setNytError('Failed to load NYT bestsellers. Check your NYT API key.');
+      } finally {
+        setNytLoading(false);
+      }
+    }
+
+    async function loadCurated() {
+      try {
+        const res = await api.get('/books/google-search', { params: { q: 'popular fiction 2024' }, signal: controller.signal });
+        setCuratedBooks(res.data.books);
+      } catch (err) {
+        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+        setCuratedError('Failed to load curated books.');
+      } finally {
+        setCuratedLoading(false);
+      }
+    }
+
     loadNytTop();
     loadCurated();
+    return () => controller.abort();
   }, []);
-
-  async function loadNytTop() {
-    try {
-      const res = await api.get('/books/nyt-top');
-      setNytBooks(res.data.books);
-    } catch {
-      setNytError('Failed to load NYT bestsellers. Check your NYT API key.');
-    } finally {
-      setNytLoading(false);
-    }
-  }
-
-  async function loadCurated() {
-    try {
-      const res = await api.get('/books/google-search', { params: { q: 'popular fiction 2024' } });
-      setCuratedBooks(res.data.books);
-    } catch {
-      setCuratedError('Failed to load curated books.');
-    } finally {
-      setCuratedLoading(false);
-    }
-  }
 
   async function handleSearch(e) {
     e.preventDefault();
