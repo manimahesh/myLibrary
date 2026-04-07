@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ReadDatePicker from './ReadDatePicker';
 
 function StarRating({ value, onChange }) {
   const [hover, setHover] = useState(0);
@@ -23,7 +24,7 @@ function StarRating({ value, onChange }) {
   );
 }
 
-export default function WishlistItem({ item, onRemoved }) {
+export default function WishlistItem({ item, onRemoved, isRead = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [bookLoading, setBookLoading] = useState(true);
@@ -36,6 +37,10 @@ export default function WishlistItem({ item, onRemoved }) {
   const [summaryError, setSummaryError] = useState('');
   const [savingSum, setSavingSum] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [read, setRead] = useState(isRead);
+  const [currentReadBookId, setCurrentReadBookId] = useState(readBookId);
+  const [togglingRead, setTogglingRead] = useState(false);
+  const [pickingDate, setPickingDate] = useState(false);
 
   const loadBook = useCallback(async () => {
     try {
@@ -114,6 +119,41 @@ export default function WishlistItem({ item, onRemoved }) {
     setSummaryError('');
   }
 
+  async function handleConfirmDate(date) {
+    setTogglingRead(true);
+    try {
+      const res = await api.post('/read-books', { book_id: item.book_id, read_at: date });
+      const newId = res.data.item.id;
+      setRead(true);
+      setCurrentReadBookId(newId);
+      setPickingDate(false);
+      onReadToggle?.(item.book_id, newId);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        const existingId = err.response?.data?.item?.id;
+        setRead(true);
+        setCurrentReadBookId(existingId || null);
+        setPickingDate(false);
+        onReadToggle?.(item.book_id, existingId || null);
+      }
+    } finally {
+      setTogglingRead(false);
+    }
+  }
+
+  async function handleUnmarkRead() {
+    if (!currentReadBookId) return;
+    setTogglingRead(true);
+    try {
+      await api.delete(`/read-books/${currentReadBookId}`);
+      setRead(false);
+      setCurrentReadBookId(null);
+      onReadToggle?.(item.book_id, null);
+    } finally {
+      setTogglingRead(false);
+    }
+  }
+
   async function handleRemove() {
     if (!window.confirm('Remove this book from your wishlist?')) return;
     setRemoving(true);
@@ -172,6 +212,34 @@ export default function WishlistItem({ item, onRemoved }) {
             Your Rating {ratingLoading && <span style={{ fontWeight: 400 }}>— saving...</span>}
           </div>
           <StarRating value={rating} onChange={handleRatingChange} />
+        </div>
+
+        {/* Mark as Read */}
+        <div>
+          {read ? (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleUnmarkRead}
+              disabled={togglingRead}
+              style={{ width: 'auto' }}
+            >
+              {togglingRead ? '...' : '✓ Marked as Read'}
+            </button>
+          ) : pickingDate ? (
+            <ReadDatePicker
+              onConfirm={handleConfirmDate}
+              onCancel={() => setPickingDate(false)}
+              loading={togglingRead}
+            />
+          ) : (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setPickingDate(true)}
+              style={{ width: 'auto' }}
+            >
+              Mark as Read
+            </button>
+          )}
         </div>
 
         {/* Summary */}

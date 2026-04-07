@@ -15,30 +15,53 @@ export default function Wishlist() {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Map<book_id, read_book_id>
+  const [readBooksMap, setReadBooksMap] = useState(new Map());
 
   useEffect(() => {
-    loadWishlist();
-  }, []);
+    let active = true;
 
-  async function loadWishlist() {
-    try {
-      const res = await api.get('/wishlist');
-      // Validate and normalize the payload to ensure it's always an array
-      const wishlistData = res.data.wishlist;
-      if (Array.isArray(wishlistData)) {
-        setWishlist(wishlistData);
-      } else {
-        setWishlist([]);
+    async function load() {
+      try {
+        const res = await api.get('/wishlist');
+        if (!active) return;
+        const wishlistData = res.data.wishlist;
+        setWishlist(Array.isArray(wishlistData) ? wishlistData : []);
+      } catch {
+        if (active) setError('Failed to load wishlist.');
+      } finally {
+        if (active) setLoading(false);
       }
-    } catch {
-      setError('Failed to load wishlist.');
-    } finally {
-      setLoading(false);
     }
-  }
+
+    async function loadReadBooks() {
+      try {
+        const res = await api.get('/read-books');
+        if (active) setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id])));
+      } catch {
+        // read status is non-critical
+      }
+    }
+
+    load();
+    loadReadBooks();
+    return () => { active = false; };
+  }, []);
 
   function handleRemoved(id) {
     setWishlist((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function handleReadToggle(bookId, newReadBookId) {
+    setReadBooksMap(prev => {
+      const next = new Map(prev);
+      if (newReadBookId) {
+        next.set(bookId, newReadBookId);
+      } else {
+        next.delete(bookId);
+      }
+      return next;
+    });
   }
 
   return (
@@ -71,7 +94,14 @@ export default function Wishlist() {
       ) : (
         <div className="wishlist-list">
           {wishlist.map((item) => (
-            <WishlistItem key={item.id} item={item} onRemoved={handleRemoved} />
+            <WishlistItem
+              key={item.id}
+              item={item}
+              onRemoved={handleRemoved}
+              isRead={readBooksMap.has(item.book_id)}
+              readBookId={readBooksMap.get(item.book_id) ?? null}
+              onReadToggle={handleReadToggle}
+            />
           ))}
         </div>
       )}

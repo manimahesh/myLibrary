@@ -15,8 +15,21 @@ export default function Store() {
   const [searchError, setSearchError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlistIds, setWishlistIds] = useState(new Set());
-  const [searchParams] = useSearchParams();
+  const [readBooksMap, setReadBooksMap] = useState(new Map());
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
+  const autoSearched = useRef(false);
+
+  // On mount: auto-run search if ?q= is in URL (restores state after Back from BookDetail)
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && !autoSearched.current) {
+      autoSearched.current = true;
+      setSearchQuery(q);
+      runSearch(q);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Focus search input when ?focus=search is in the URL
   useEffect(() => {
@@ -26,15 +39,50 @@ export default function Store() {
     }
   }, [searchParams]);
 
-  // Pre-fetch wishlist so BookCards can reflect existing state immediately
+  // Pre-fetch wishlist and read books
   useEffect(() => {
     api.get('/wishlist')
       .then(res => setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))))
+      .catch(() => {});
+    api.get('/read-books')
+      .then(res => setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))))
       .catch(() => {});
   }, []);
 
   function handleAddedToWishlist(bookId) {
     setWishlistIds(prev => new Set([...prev, bookId]));
+  }
+
+  function handleReadToggle(bookId, newReadBookId) {
+    setReadBooksMap(prev => {
+      const next = new Map(prev);
+      if (newReadBookId) { next.set(bookId, newReadBookId); }
+      else { next.delete(bookId); }
+      return next;
+    });
+  }
+
+  async function runSearch(query) {
+    setSearchLoading(true);
+    setSearchError('');
+    setSearchResults([]);
+    try {
+      const res = await api.get('/books/google-search', { params: { q: query } });
+      setSearchResults(res.data.books);
+    } catch {
+      setSearchError('Search failed. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    // Persist query in URL so Back from BookDetail restores results
+    setSearchParams(prev => { prev.set('q', q); return prev; });
+    runSearch(q);
   }
 
   useEffect(() => {
@@ -69,22 +117,6 @@ export default function Store() {
     return () => controller.abort();
   }, []);
 
-  async function handleSearch(e) {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearchLoading(true);
-    setSearchError('');
-    setSearchResults([]);
-    try {
-      const res = await api.get('/books/google-search', { params: { q: searchQuery.trim() } });
-      setSearchResults(res.data.books);
-    } catch {
-      setSearchError('Search failed. Please try again.');
-    } finally {
-      setSearchLoading(false);
-    }
-  }
-
   return (
     <div className="store-content">
 
@@ -108,7 +140,15 @@ export default function Store() {
         {searchResults.length > 0 && (
           <div className="books-grid">
             {searchResults.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         )}
@@ -124,7 +164,15 @@ export default function Store() {
         ) : nytBooks.length > 0 ? (
           <div className="books-grid">
             {nytBooks.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         ) : !nytError && (
@@ -144,7 +192,15 @@ export default function Store() {
         ) : curatedBooks.length > 0 ? (
           <div className="books-grid">
             {curatedBooks.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         ) : !curatedError && (

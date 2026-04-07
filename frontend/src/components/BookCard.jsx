@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ReadDatePicker from './ReadDatePicker';
 
-export default function BookCard({ book, inWishlist = false, onAdded }) {
+export default function BookCard({ book, inWishlist = false, onAdded, inReadBooks = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState('');
+  const [isRead, setIsRead] = useState(inReadBooks);
+  const [currentReadBookId, setCurrentReadBookId] = useState(readBookId);
+  const [pickingDate, setPickingDate] = useState(false);
+  const [togglingRead, setTogglingRead] = useState(false);
 
   const isInWishlist = inWishlist || added;
 
@@ -28,6 +33,50 @@ export default function BookCard({ book, inWishlist = false, onAdded }) {
       }
     } finally {
       setAdding(false);
+    }
+  }
+
+  function handleReadClick(e) {
+    e.stopPropagation();
+    if (isRead) {
+      handleUnmark();
+    } else {
+      setPickingDate(true);
+    }
+  }
+
+  async function handleConfirmDate(date) {
+    setTogglingRead(true);
+    try {
+      const res = await api.post('/read-books', { book_id: book.id, read_at: date });
+      const newId = res.data.item.id;
+      setIsRead(true);
+      setCurrentReadBookId(newId);
+      setPickingDate(false);
+      onReadToggle?.(book.id, newId);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        const existingId = err.response?.data?.item?.id;
+        setIsRead(true);
+        setCurrentReadBookId(existingId || null);
+        setPickingDate(false);
+        onReadToggle?.(book.id, existingId || null);
+      }
+    } finally {
+      setTogglingRead(false);
+    }
+  }
+
+  async function handleUnmark() {
+    if (!currentReadBookId) return;
+    setTogglingRead(true);
+    try {
+      await api.delete(`/read-books/${currentReadBookId}`);
+      setIsRead(false);
+      setCurrentReadBookId(null);
+      onReadToggle?.(book.id, null);
+    } finally {
+      setTogglingRead(false);
     }
   }
 
@@ -63,6 +112,25 @@ export default function BookCard({ book, inWishlist = false, onAdded }) {
         >
           {isInWishlist ? 'In Wishlist' : adding ? 'Adding...' : '+ Wishlist'}
         </button>
+        {onReadToggle !== undefined && !pickingDate && (
+          <button
+            className={`btn btn-sm${isRead ? ' btn-secondary' : ' btn-ghost'}`}
+            onClick={handleReadClick}
+            disabled={togglingRead}
+            style={{ marginTop: 4 }}
+          >
+            {togglingRead ? '...' : isRead ? '✓ Read' : 'Mark as Read'}
+          </button>
+        )}
+        {pickingDate && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <ReadDatePicker
+              onConfirm={handleConfirmDate}
+              onCancel={() => setPickingDate(false)}
+              loading={togglingRead}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
