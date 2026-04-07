@@ -1,2 +1,4 @@
-path_filters:
-  - "!**/*.md"
+reviews:
+  review_details: true
+  path_filters:
+    - '!**/*.md'
