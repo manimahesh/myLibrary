@@ -34,8 +34,13 @@ async function markAsRead(req, res) {
   } catch (err) {
     console.error('Mark as read error:', err);
     if (err.code === '23505') {
-      const existing = await ReadBook.findByBookId(req.user.userId, value.book_id).catch(() => null);
-      return res.status(409).json({ error: 'Book already marked as read', item: existing });
+      try {
+        const existing = await ReadBook.findByBookId(req.user.userId, req.body.book_id);
+        return res.status(409).json({ error: 'Book already marked as read', item: existing });
+      } catch (lookupErr) {
+        console.error('Read book duplicate lookup error:', lookupErr);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
     }
     res.status(500).json({ error: 'Internal server error' });
   }
