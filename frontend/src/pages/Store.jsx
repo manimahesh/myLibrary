@@ -15,6 +15,8 @@ export default function Store() {
   const [searchError, setSearchError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlistIds, setWishlistIds] = useState(new Set());
+  // Map<book_id, read_book_id>
+  const [readBooksMap, setReadBooksMap] = useState(new Map());
   const [searchParams] = useSearchParams();
   const searchInputRef = useRef(null);
 
@@ -26,15 +28,30 @@ export default function Store() {
     }
   }, [searchParams]);
 
-  // Pre-fetch wishlist so BookCards can reflect existing state immediately
+  // Pre-fetch wishlist and read books so BookCards reflect existing state immediately
   useEffect(() => {
     api.get('/wishlist')
       .then(res => setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))))
+      .catch(() => {});
+    api.get('/read-books')
+      .then(res => setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))))
       .catch(() => {});
   }, []);
 
   function handleAddedToWishlist(bookId) {
     setWishlistIds(prev => new Set([...prev, bookId]));
+  }
+
+  function handleReadToggle(bookId, newReadBookId) {
+    setReadBooksMap(prev => {
+      const next = new Map(prev);
+      if (newReadBookId) {
+        next.set(bookId, newReadBookId);
+      } else {
+        next.delete(bookId);
+      }
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -108,7 +125,15 @@ export default function Store() {
         {searchResults.length > 0 && (
           <div className="books-grid">
             {searchResults.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         )}
@@ -124,7 +149,15 @@ export default function Store() {
         ) : nytBooks.length > 0 ? (
           <div className="books-grid">
             {nytBooks.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         ) : !nytError && (
@@ -144,7 +177,15 @@ export default function Store() {
         ) : curatedBooks.length > 0 ? (
           <div className="books-grid">
             {curatedBooks.map((book) => (
-              <BookCard key={book.id} book={book} inWishlist={wishlistIds.has(book.id)} onAdded={handleAddedToWishlist} />
+              <BookCard
+                key={book.id}
+                book={book}
+                inWishlist={wishlistIds.has(book.id)}
+                onAdded={handleAddedToWishlist}
+                inReadBooks={readBooksMap.has(book.id)}
+                readBookId={readBooksMap.get(book.id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
             ))}
           </div>
         ) : !curatedError && (

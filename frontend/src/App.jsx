@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Store from './pages/Store';
 import BookDetail from './pages/BookDetail';
 import Wishlist from './pages/Wishlist';
+import ReadBooks from './pages/ReadBooks';
 import './App.css';
 
 function ProtectedLayout({ children }) {
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedLayout>
                   <Wishlist />
+                </ProtectedLayout>
+              }
+            />
+            <Route
+              path="/read-books"
+              element={
+                <ProtectedLayout>
+                  <ReadBooks />
                 </ProtectedLayout>
               }
             />

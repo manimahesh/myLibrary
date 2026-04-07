@@ -15,21 +15,21 @@ export default function Wishlist() {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Map<book_id, read_book_id>
+  const [readBooksMap, setReadBooksMap] = useState(new Map());
 
   useEffect(() => {
     loadWishlist();
+    api.get('/read-books')
+      .then(res => setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))))
+      .catch(() => {});
   }, []);
 
   async function loadWishlist() {
     try {
       const res = await api.get('/wishlist');
-      // Validate and normalize the payload to ensure it's always an array
       const wishlistData = res.data.wishlist;
-      if (Array.isArray(wishlistData)) {
-        setWishlist(wishlistData);
-      } else {
-        setWishlist([]);
-      }
+      setWishlist(Array.isArray(wishlistData) ? wishlistData : []);
     } catch {
       setError('Failed to load wishlist.');
     } finally {
@@ -39,6 +39,18 @@ export default function Wishlist() {
 
   function handleRemoved(id) {
     setWishlist((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function handleReadToggle(bookId, newReadBookId) {
+    setReadBooksMap(prev => {
+      const next = new Map(prev);
+      if (newReadBookId) {
+        next.set(bookId, newReadBookId);
+      } else {
+        next.delete(bookId);
+      }
+      return next;
+    });
   }
 
   return (
@@ -71,7 +83,14 @@ export default function Wishlist() {
       ) : (
         <div className="wishlist-list">
           {wishlist.map((item) => (
-            <WishlistItem key={item.id} item={item} onRemoved={handleRemoved} />
+            <WishlistItem
+              key={item.id}
+              item={item}
+              onRemoved={handleRemoved}
+              isRead={readBooksMap.has(item.book_id)}
+              readBookId={readBooksMap.get(item.book_id) ?? null}
+              onReadToggle={handleReadToggle}
+            />
           ))}
         </div>
       )}

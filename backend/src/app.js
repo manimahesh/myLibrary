@@ -8,6 +8,7 @@ const paymentRoutes = require('./routes/payment');
 const booksRoutes = require('./routes/books');
 const wishlistRoutes = require('./routes/wishlist');
 const bookSummaryRoutes = require('./routes/bookSummary');
+const readBooksRoutes = require('./routes/readBooks');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/books', booksRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/summaries', bookSummaryRoutes);
+app.use('/api/read-books', readBooksRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

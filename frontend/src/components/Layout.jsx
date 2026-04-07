@@ -54,28 +54,33 @@ function IconCard() {
   );
 }
 
+function IconCheck() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  );
+}
+
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const initial = user?.email?.[0]?.toUpperCase() ?? '?';
+  const params = new URLSearchParams(location.search);
+  const isSearchFocus = location.pathname === '/store' && params.get('focus') === 'search';
+  const isPaymentsTab = location.pathname === '/profile' && params.get('tab') === 'payments';
 
-  const isActive = (path, search) => {
-    if (search) {
-      return location.pathname === path && location.search.includes(search);
-    }
-    if (path === '/store') {
-      return location.pathname === '/store' && !location.search.includes('focus=search');
-    }
-    return location.pathname === path;
-  };
+  const isActive = (path) => location.pathname === path;
 
   const navLinks = [
-    { label: 'Store', to: '/store', icon: <IconStore />, active: isActive('/store') },
-    { label: 'Search', to: '/store?focus=search', icon: <IconSearch />, active: isActive('/store', 'focus=search') },
+    { label: 'Store', to: '/store', icon: <IconStore />, active: isActive('/store') && !isSearchFocus },
+    { label: 'Search', to: '/store?focus=search', icon: <IconSearch />, active: isSearchFocus },
     { label: 'Wishlist', to: '/wishlist', icon: <IconHeart />, active: isActive('/wishlist') },
-    { label: 'Profile', to: '/profile', icon: <IconUser />, active: isActive('/profile') && !location.search.includes('tab=payments') },
-    { label: 'Payment Methods', to: '/profile?tab=payments', icon: <IconCard />, active: isActive('/profile', 'tab=payments') },
+    { label: 'Read Books', to: '/read-books', icon: <IconCheck />, active: isActive('/read-books') },
+    { label: 'Profile', to: '/profile', icon: <IconUser />, active: isActive('/profile') && !isPaymentsTab },
+    { label: 'Payment Methods', to: '/profile?tab=payments', icon: <IconCard />, active: isPaymentsTab },
   ];
 
   return (

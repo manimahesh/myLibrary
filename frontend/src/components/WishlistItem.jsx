@@ -23,7 +23,7 @@ function StarRating({ value, onChange }) {
   );
 }
 
-export default function WishlistItem({ item, onRemoved }) {
+export default function WishlistItem({ item, onRemoved, isRead = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [bookLoading, setBookLoading] = useState(true);
@@ -36,6 +36,9 @@ export default function WishlistItem({ item, onRemoved }) {
   const [summaryError, setSummaryError] = useState('');
   const [savingSum, setSavingSum] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [read, setRead] = useState(isRead);
+  const [currentReadBookId, setCurrentReadBookId] = useState(readBookId);
+  const [togglingRead, setTogglingRead] = useState(false);
 
   const loadBook = useCallback(async () => {
     try {
@@ -114,6 +117,33 @@ export default function WishlistItem({ item, onRemoved }) {
     setSummaryError('');
   }
 
+  async function handleReadToggle() {
+    setTogglingRead(true);
+    try {
+      if (read && currentReadBookId) {
+        await api.delete(`/read-books/${currentReadBookId}`);
+        setRead(false);
+        setCurrentReadBookId(null);
+        onReadToggle?.(item.book_id, null);
+      } else {
+        const res = await api.post('/read-books', { book_id: item.book_id });
+        const newId = res.data.item.id;
+        setRead(true);
+        setCurrentReadBookId(newId);
+        onReadToggle?.(item.book_id, newId);
+      }
+    } catch (err) {
+      if (err.response?.status === 409 && !read) {
+        const existingId = err.response?.data?.item?.id;
+        setRead(true);
+        setCurrentReadBookId(existingId || null);
+        onReadToggle?.(item.book_id, existingId || null);
+      }
+    } finally {
+      setTogglingRead(false);
+    }
+  }
+
   async function handleRemove() {
     if (!window.confirm('Remove this book from your wishlist?')) return;
     setRemoving(true);
@@ -172,6 +202,18 @@ export default function WishlistItem({ item, onRemoved }) {
             Your Rating {ratingLoading && <span style={{ fontWeight: 400 }}>— saving...</span>}
           </div>
           <StarRating value={rating} onChange={handleRatingChange} />
+        </div>
+
+        {/* Mark as Read */}
+        <div>
+          <button
+            className={`btn btn-sm${read ? ' btn-secondary' : ' btn-ghost'}`}
+            onClick={handleReadToggle}
+            disabled={togglingRead}
+            style={{ width: 'auto' }}
+          >
+            {togglingRead ? '...' : read ? '✓ Marked as Read' : 'Mark as Read'}
+          </button>
         </div>
 
         {/* Summary */}

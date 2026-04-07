@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-export default function BookCard({ book, inWishlist = false, onAdded }) {
+export default function BookCard({ book, inWishlist = false, onAdded, inReadBooks = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [error, setError] = useState('');
+  const [togglingRead, setTogglingRead] = useState(false);
+  const [isRead, setIsRead] = useState(inReadBooks);
+  const [currentReadBookId, setCurrentReadBookId] = useState(readBookId);
 
   const isInWishlist = inWishlist || added;
 
@@ -28,6 +31,34 @@ export default function BookCard({ book, inWishlist = false, onAdded }) {
       }
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleReadToggle(e) {
+    e.stopPropagation();
+    setTogglingRead(true);
+    try {
+      if (isRead && currentReadBookId) {
+        await api.delete(`/read-books/${currentReadBookId}`);
+        setIsRead(false);
+        setCurrentReadBookId(null);
+        onReadToggle?.(book.id, null);
+      } else {
+        const res = await api.post('/read-books', { book_id: book.id });
+        const newId = res.data.item.id;
+        setIsRead(true);
+        setCurrentReadBookId(newId);
+        onReadToggle?.(book.id, newId);
+      }
+    } catch (err) {
+      if (err.response?.status === 409 && !isRead) {
+        const existingId = err.response?.data?.item?.id;
+        setIsRead(true);
+        setCurrentReadBookId(existingId || null);
+        onReadToggle?.(book.id, existingId || null);
+      }
+    } finally {
+      setTogglingRead(false);
     }
   }
 
@@ -63,6 +94,16 @@ export default function BookCard({ book, inWishlist = false, onAdded }) {
         >
           {isInWishlist ? 'In Wishlist' : adding ? 'Adding...' : '+ Wishlist'}
         </button>
+        {onReadToggle !== undefined && (
+          <button
+            className={`btn btn-sm${isRead ? ' btn-secondary' : ' btn-ghost'}`}
+            onClick={handleReadToggle}
+            disabled={togglingRead}
+            style={{ marginTop: 4 }}
+          >
+            {togglingRead ? '...' : isRead ? '✓ Read' : 'Mark as Read'}
+          </button>
+        )}
       </div>
     </div>
   );
