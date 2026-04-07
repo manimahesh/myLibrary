@@ -1,17 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import DOMPurify from 'dompurify';
-
-function IconBook() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  );
-}
 
 function StarDisplay({ rating, count = 0 }) {
   return (
@@ -23,31 +13,6 @@ function StarDisplay({ rating, count = 0 }) {
       </div>
       {rating != null && <span className="rating-count">{Number(rating).toFixed(1)} ({count} ratings)</span>}
     </div>
-  );
-}
-
-function Navbar() {
-  const { user, logout } = useAuth();
-  const location = useLocation();
-  const initial = user?.email?.[0]?.toUpperCase() ?? '?';
-
-  return (
-    <nav className="navbar">
-      <div className="navbar-brand">
-        <div className="navbar-brand-logo"><IconBook /></div>
-        <span className="navbar-brand-name">MyLibrary</span>
-      </div>
-      <div className="navbar-nav">
-        <Link to="/store" className={`navbar-nav-link${location.pathname === '/store' ? ' active' : ''}`}>Browse</Link>
-        <Link to="/wishlist" className={`navbar-nav-link${location.pathname === '/wishlist' ? ' active' : ''}`}>Wishlist</Link>
-        <Link to="/profile" className={`navbar-nav-link${location.pathname === '/profile' ? ' active' : ''}`}>Profile</Link>
-      </div>
-      <div className="navbar-user">
-        {user && <span className="navbar-email">{user.email}</span>}
-        <div className="navbar-avatar">{initial}</div>
-        <button className="btn btn-secondary btn-sm" onClick={logout}>Sign out</button>
-      </div>
-    </nav>
   );
 }
 
@@ -103,31 +68,23 @@ export default function BookDetail() {
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <div className="book-detail-content">
-          <p style={{ color: 'var(--color-text-3)', fontSize: 14 }}>Loading book details...</p>
-        </div>
-      </>
+      <div className="book-detail-content">
+        <p style={{ color: 'var(--color-text-3)', fontSize: 14 }}>Loading book details...</p>
+      </div>
     );
   }
 
   if (error || !book) {
     return (
-      <>
-        <Navbar />
-        <div className="book-detail-content">
-          <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
-          <p className="server-error">{error || 'Book not found.'}</p>
-        </div>
-      </>
+      <div className="book-detail-content">
+        <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
+        <p className="server-error">{error || 'Book not found.'}</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="book-detail-content">
+    <div className="book-detail-content">
         <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
 
         <div className="book-detail-hero">
@@ -205,6 +162,5 @@ export default function BookDetail() {
           </div>
         )}
       </div>
-    </>
   );
 }
