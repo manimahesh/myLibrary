@@ -15,10 +15,21 @@ export default function Store() {
   const [searchError, setSearchError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlistIds, setWishlistIds] = useState(new Set());
-  // Map<book_id, read_book_id>
   const [readBooksMap, setReadBooksMap] = useState(new Map());
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
+  const autoSearched = useRef(false);
+
+  // On mount: auto-run search if ?q= is in URL (restores state after Back from BookDetail)
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && !autoSearched.current) {
+      autoSearched.current = true;
+      setSearchQuery(q);
+      runSearch(q);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Focus search input when ?focus=search is in the URL
   useEffect(() => {
@@ -28,7 +39,7 @@ export default function Store() {
     }
   }, [searchParams]);
 
-  // Pre-fetch wishlist and read books so BookCards reflect existing state immediately
+  // Pre-fetch wishlist and read books
   useEffect(() => {
     api.get('/wishlist')
       .then(res => setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))))
@@ -45,13 +56,33 @@ export default function Store() {
   function handleReadToggle(bookId, newReadBookId) {
     setReadBooksMap(prev => {
       const next = new Map(prev);
-      if (newReadBookId) {
-        next.set(bookId, newReadBookId);
-      } else {
-        next.delete(bookId);
-      }
+      if (newReadBookId) { next.set(bookId, newReadBookId); }
+      else { next.delete(bookId); }
       return next;
     });
+  }
+
+  async function runSearch(query) {
+    setSearchLoading(true);
+    setSearchError('');
+    setSearchResults([]);
+    try {
+      const res = await api.get('/books/google-search', { params: { q: query } });
+      setSearchResults(res.data.books);
+    } catch {
+      setSearchError('Search failed. Please try again.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    // Persist query in URL so Back from BookDetail restores results
+    setSearchParams(prev => { prev.set('q', q); return prev; });
+    runSearch(q);
   }
 
   useEffect(() => {
@@ -85,22 +116,6 @@ export default function Store() {
     loadCurated();
     return () => controller.abort();
   }, []);
-
-  async function handleSearch(e) {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearchLoading(true);
-    setSearchError('');
-    setSearchResults([]);
-    try {
-      const res = await api.get('/books/google-search', { params: { q: searchQuery.trim() } });
-      setSearchResults(res.data.books);
-    } catch {
-      setSearchError('Search failed. Please try again.');
-    } finally {
-      setSearchLoading(false);
-    }
-  }
 
   return (
     <div className="store-content">

@@ -17,12 +17,12 @@ const ReadBook = {
     return result.rows[0] || null;
   },
 
-  async create(userId, bookId) {
+  async create(userId, bookId, readAt) {
     const result = await db.query(
-      `INSERT INTO read_books (user_id, book_id)
-       VALUES ($1, $2)
+      `INSERT INTO read_books (user_id, book_id, read_at)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      [userId, bookId]
+      [userId, bookId, readAt || new Date()]
     );
     return result.rows[0];
   },

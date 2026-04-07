@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import DOMPurify from 'dompurify';
+import ReadDatePicker from '../components/ReadDatePicker';
 
 function StarDisplay({ rating, count = 0 }) {
   return (
@@ -25,12 +26,19 @@ export default function BookDetail() {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [wishlistError, setWishlistError] = useState('');
+  const [isRead, setIsRead] = useState(false);
+  const [readBookId, setReadBookId] = useState(null);
+  const [pickingDate, setPickingDate] = useState(false);
+  const [togglingRead, setTogglingRead] = useState(false);
 
   useEffect(() => {
     let active = true;
     setAdded(false);
     setWishlistError('');
     setAdding(false);
+    setIsRead(false);
+    setReadBookId(null);
+    setPickingDate(false);
 
     async function loadBook() {
       setLoading(true);
@@ -45,7 +53,22 @@ export default function BookDetail() {
       }
     }
 
+    async function loadReadStatus() {
+      try {
+        const res = await api.get('/read-books');
+        if (!active) return;
+        const entry = res.data.readBooks.find(r => r.book_id === id);
+        if (entry) {
+          setIsRead(true);
+          setReadBookId(entry.id);
+        }
+      } catch {
+        // read status is non-critical, ignore errors
+      }
+    }
+
     loadBook();
+    loadReadStatus();
     return () => { active = false; };
   }, [id]);
 
@@ -63,6 +86,37 @@ export default function BookDetail() {
       }
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleConfirmDate(date) {
+    setTogglingRead(true);
+    try {
+      const res = await api.post('/read-books', { book_id: id, read_at: date });
+      setIsRead(true);
+      setReadBookId(res.data.item.id);
+      setPickingDate(false);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        const existingId = err.response?.data?.item?.id;
+        setIsRead(true);
+        setReadBookId(existingId || null);
+        setPickingDate(false);
+      }
+    } finally {
+      setTogglingRead(false);
+    }
+  }
+
+  async function handleUnmarkRead() {
+    if (!readBookId) return;
+    setTogglingRead(true);
+    try {
+      await api.delete(`/read-books/${readBookId}`);
+      setIsRead(false);
+      setReadBookId(null);
+    } finally {
+      setTogglingRead(false);
     }
   }
 
@@ -85,82 +139,108 @@ export default function BookDetail() {
 
   return (
     <div className="book-detail-content">
-        <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
+      <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
 
-        <div className="book-detail-hero">
-          {book.thumbnail ? (
-            <img src={book.thumbnail} alt={book.title} className="book-detail-cover" />
-          ) : (
-            <div className="book-detail-cover-placeholder">No cover</div>
+      <div className="book-detail-hero">
+        {book.thumbnail ? (
+          <img src={book.thumbnail} alt={book.title} className="book-detail-cover" />
+        ) : (
+          <div className="book-detail-cover-placeholder">No cover</div>
+        )}
+
+        <div className="book-detail-meta">
+          <h1 className="book-detail-title">{book.title}</h1>
+          {book.author && <p className="book-detail-author">by {book.author}</p>}
+
+          <div className="book-detail-stats">
+            {book.publishedDate && (
+              <div className="book-detail-stat">
+                <span className="book-detail-stat-label">Published</span>
+                <span className="book-detail-stat-value">{book.publishedDate}</span>
+              </div>
+            )}
+            {book.pageCount && (
+              <div className="book-detail-stat">
+                <span className="book-detail-stat-label">Pages</span>
+                <span className="book-detail-stat-value">{book.pageCount}</span>
+              </div>
+            )}
+            {book.publisher && (
+              <div className="book-detail-stat">
+                <span className="book-detail-stat-label">Publisher</span>
+                <span className="book-detail-stat-value">{book.publisher}</span>
+              </div>
+            )}
+          </div>
+
+          {book.averageRating != null && (
+            <StarDisplay rating={book.averageRating} count={book.ratingsCount} />
           )}
 
-          <div className="book-detail-meta">
-            <h1 className="book-detail-title">{book.title}</h1>
-            {book.author && <p className="book-detail-author">by {book.author}</p>}
-
-            <div className="book-detail-stats">
-              {book.publishedDate && (
-                <div className="book-detail-stat">
-                  <span className="book-detail-stat-label">Published</span>
-                  <span className="book-detail-stat-value">{book.publishedDate}</span>
-                </div>
-              )}
-              {book.pageCount && (
-                <div className="book-detail-stat">
-                  <span className="book-detail-stat-label">Pages</span>
-                  <span className="book-detail-stat-value">{book.pageCount}</span>
-                </div>
-              )}
-              {book.publisher && (
-                <div className="book-detail-stat">
-                  <span className="book-detail-stat-label">Publisher</span>
-                  <span className="book-detail-stat-value">{book.publisher}</span>
-                </div>
-              )}
-            </div>
-
-            {book.averageRating != null && (
-              <StarDisplay rating={book.averageRating} count={book.ratingsCount} />
-            )}
-
-            <div className="book-detail-actions">
+          <div className="book-detail-actions">
+            <button
+              className="btn btn-primary"
+              style={{ width: 'auto' }}
+              onClick={handleAddToWishlist}
+              disabled={adding || added}
+            >
+              {added ? 'In Wishlist' : adding ? 'Adding...' : '+ Add to Wishlist'}
+            </button>
+            <button className="btn btn-secondary" style={{ width: 'auto' }} onClick={() => navigate('/wishlist')}>
+              View Wishlist
+            </button>
+            {isRead ? (
               <button
-                className="btn btn-primary"
+                className="btn btn-secondary"
                 style={{ width: 'auto' }}
-                onClick={handleAddToWishlist}
-                disabled={adding || added}
+                onClick={handleUnmarkRead}
+                disabled={togglingRead}
               >
-                {added ? 'In Wishlist' : adding ? 'Adding...' : '+ Add to Wishlist'}
+                {togglingRead ? '...' : '✓ Marked as Read'}
               </button>
-              <button className="btn btn-secondary" style={{ width: 'auto' }} onClick={() => navigate('/wishlist')}>
-                View Wishlist
+            ) : !pickingDate ? (
+              <button
+                className="btn btn-ghost"
+                style={{ width: 'auto' }}
+                onClick={() => setPickingDate(true)}
+              >
+                Mark as Read
               </button>
+            ) : null}
+          </div>
+          {wishlistError && <p className="book-card-error">{wishlistError}</p>}
+
+          {pickingDate && (
+            <ReadDatePicker
+              onConfirm={handleConfirmDate}
+              onCancel={() => setPickingDate(false)}
+              loading={togglingRead}
+            />
+          )}
+        </div>
+      </div>
+
+      {book.description && (
+        <div className="book-detail-description">
+          <h3>About this book</h3>
+          <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(book.description) }} />
+        </div>
+      )}
+
+      {book.averageRating != null && (
+        <div className="book-detail-reviews">
+          <h3>Reader Reviews</h3>
+          <div className="reviews-summary">
+            <div className="reviews-avg-score">{book.averageRating.toFixed(1)}</div>
+            <div className="reviews-avg-detail">
+              <StarDisplay rating={book.averageRating} count={book.ratingsCount} />
+              <span style={{ fontSize: 13, color: 'var(--color-text-2)' }}>
+                Based on {book.ratingsCount} Google Books ratings
+              </span>
             </div>
-            {wishlistError && <p className="book-card-error">{wishlistError}</p>}
           </div>
         </div>
-
-        {book.description && (
-          <div className="book-detail-description">
-            <h3>About this book</h3>
-            <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(book.description) }} />
-          </div>
-        )}
-
-        {book.averageRating != null && (
-          <div className="book-detail-reviews">
-            <h3>Reader Reviews</h3>
-            <div className="reviews-summary">
-              <div className="reviews-avg-score">{book.averageRating.toFixed(1)}</div>
-              <div className="reviews-avg-detail">
-                <StarDisplay rating={book.averageRating} count={book.ratingsCount} />
-                <span style={{ fontSize: 13, color: 'var(--color-text-2)' }}>
-                  Based on {book.ratingsCount} Google Books ratings
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
+    </div>
   );
 }

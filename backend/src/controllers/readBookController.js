@@ -4,6 +4,7 @@ const { validate: isValidUUID } = require('uuid');
 
 const markSchema = Joi.object({
   book_id: Joi.string().min(1).required(),
+  read_at: Joi.string().isoDate().optional(),
 });
 
 async function list(req, res) {
@@ -28,7 +29,7 @@ async function markAsRead(req, res) {
       return res.status(409).json({ error: 'Book already marked as read', item: existing });
     }
 
-    const item = await ReadBook.create(req.user.userId, value.book_id);
+    const item = await ReadBook.create(req.user.userId, value.book_id, value.read_at);
     res.status(201).json({ item });
   } catch (err) {
     console.error('Mark as read error:', err);
