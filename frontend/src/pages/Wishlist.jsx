@@ -19,23 +19,34 @@ export default function Wishlist() {
   const [readBooksMap, setReadBooksMap] = useState(new Map());
 
   useEffect(() => {
-    loadWishlist();
-    api.get('/read-books')
-      .then(res => setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))))
-      .catch(() => {});
-  }, []);
+    let active = true;
 
-  async function loadWishlist() {
-    try {
-      const res = await api.get('/wishlist');
-      const wishlistData = res.data.wishlist;
-      setWishlist(Array.isArray(wishlistData) ? wishlistData : []);
-    } catch {
-      setError('Failed to load wishlist.');
-    } finally {
-      setLoading(false);
+    async function load() {
+      try {
+        const res = await api.get('/wishlist');
+        if (!active) return;
+        const wishlistData = res.data.wishlist;
+        setWishlist(Array.isArray(wishlistData) ? wishlistData : []);
+      } catch {
+        if (active) setError('Failed to load wishlist.');
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }
+
+    async function loadReadBooks() {
+      try {
+        const res = await api.get('/read-books');
+        if (active) setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id])));
+      } catch {
+        // read status is non-critical
+      }
+    }
+
+    load();
+    loadReadBooks();
+    return () => { active = false; };
+  }, []);
 
   function handleRemoved(id) {
     setWishlist((prev) => prev.filter((item) => item.id !== id));

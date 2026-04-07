@@ -34,7 +34,8 @@ async function markAsRead(req, res) {
   } catch (err) {
     console.error('Mark as read error:', err);
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'Book already marked as read' });
+      const existing = await ReadBook.findByBookId(req.user.userId, value.book_id).catch(() => null);
+      return res.status(409).json({ error: 'Book already marked as read', item: existing });
     }
     res.status(500).json({ error: 'Internal server error' });
   }
