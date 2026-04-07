@@ -770,7 +770,6 @@ a:hover {
 .store-content {
   padding: 36px 40px;
   max-width: 1200px;
-  margin: 0 auto;
 }
 
 .store-section {
@@ -904,7 +903,6 @@ a:hover {
 .book-detail-content {
   padding: 36px 40px;
   max-width: 900px;
-  margin: 0 auto;
 }
 
 .book-detail-back {
@@ -1087,7 +1085,6 @@ a:hover {
 .wishlist-content {
   padding: 36px 40px;
   max-width: 900px;
-  margin: 0 auto;
 }
 
 .wishlist-list {
