@@ -47,22 +47,21 @@ export default function ReadBookItem({ item, onUnmarked }) {
       )}
 
       <div className="read-book-body">
-        <div className="read-book-header">
-          <div>
-            <div
-              className="read-book-title"
-              onClick={() => navigate(`/books/${encodeURIComponent(item.book_id)}`)}
-            >
-              {title}
-            </div>
-            {author && <div className="read-book-author">{author}</div>}
-            <div className="read-book-date">Read on {readDate}</div>
+        <div className="read-book-info">
+          <div
+            className="read-book-title"
+            onClick={() => navigate(`/books/${encodeURIComponent(item.book_id)}`)}
+          >
+            {title}
           </div>
+          {author && <div className="read-book-author">{author}</div>}
+          <div className="read-book-date">Read on {readDate}</div>
+        </div>
+        <div className="read-book-actions">
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleUnmark}
             disabled={removing}
-            style={{ width: 'auto', flexShrink: 0 }}
           >
             {removing ? 'Removing...' : 'Unmark as Read'}
           </button>
