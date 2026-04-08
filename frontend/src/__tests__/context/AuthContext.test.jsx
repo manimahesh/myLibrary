@@ -11,7 +11,7 @@ vi.mock('../../services/api', () => ({
 import api from '../../services/api';
 
 function Consumer() {
-  const { user, token, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, login, logout } = useAuth();
   return (
     <div>
       <span data-testid="auth">{isAuthenticated ? 'yes' : 'no'}</span>

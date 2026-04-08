@@ -56,7 +56,7 @@ describe('markAsRead', () => {
     ReadBook.create.mockResolvedValue({ id: 'r1' });
     const res = mockRes();
     await markAsRead(mockReq({ body: { book_id: 'book-1', read_at: '2024-06-01' } }), res);
-    expect(ReadBook.create).toHaveBeenCalledWith('user-1', 'book-1', '2024-06-01');
+    expect(ReadBook.create).toHaveBeenCalledWith('user-1', 'book-1', '2024-06-01T00:00:00.000Z');
   });
 });
 
