@@ -63,6 +63,6 @@ describe('googleBooksService.getBookDetails', () => {
 
     const book = await getBookDetails('isbn:9780000000001');
     expect(book).toMatchObject({ title: 'Test Book' });
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('isbn:'), expect.any(Object));
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('isbn%3A'), expect.any(Object));
   });
 });

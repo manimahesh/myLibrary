@@ -10,7 +10,7 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "jest",
-    "test:integration": "jest --testPathPattern=integration --testEnvironment=node"
+    "test:integration": "jest --testPathPattern=integration --testPathIgnorePatterns='[]' --testEnvironment=node"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
