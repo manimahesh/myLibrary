@@ -1,247 +1,81 @@
 # MyLibrary
 
-A full-stack web application built with Node.js/Express, React, and PostgreSQL featuring user authentication, a bookstore browsing experience, wishlist management, and personal book summaries.
+**Your personal reading companion.** Discover new books, curate your reading list, track what you've read, and build a library that's entirely your own.
 
-## Tech Stack
+---
 
-- **Backend:** Node.js, Express, PostgreSQL
-- **Frontend:** React (Vite), React Router, Axios, React Hook Form
-- **Auth:** JWT-based authentication with bcrypt password hashing
-- **External APIs:** NYT Books API, Google Books API
+## What is MyLibrary?
 
-## Project Structure
+MyLibrary is a web app for readers who want more than a bookmarks folder. It pulls live data from the NYT Bestseller lists and the Google Books catalog so you're always looking at current titles — then gives you the tools to organize, annotate, and reflect on everything you read.
 
-```
-backend/
-├── src/
-│   ├── app.js                        # Express entry point
-│   ├── config/
-│   │   ├── index.js                  # Environment variable config
-│   │   └── database.js               # PostgreSQL connection pool
-│   ├── controllers/
-│   │   ├── authController.js         # Register & login handlers
-│   │   ├── addressController.js
-│   │   ├── paymentController.js
-│   │   ├── booksController.js        # NYT & Google Books proxy
-│   │   ├── wishlistController.js
-│   │   └── bookSummaryController.js
-│   ├── middleware/
-│   │   └── auth.js                   # JWT verification middleware
-│   ├── migrations/
-│   │   ├── 001_create_users.sql
-│   │   ├── 002_create_addresses.sql
-│   │   ├── 003_create_payment_methods.sql
-│   │   ├── 004_create_wishlists.sql
-│   │   └── 005_create_book_summaries.sql
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Address.js
-│   │   ├── PaymentMethod.js
-│   │   ├── Wishlist.js
-│   │   └── BookSummary.js
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── address.js
-│   │   ├── payment.js
-│   │   ├── books.js
-│   │   ├── wishlist.js
-│   │   └── bookSummary.js
-│   ├── services/
-│   │   ├── nytBooksService.js        # NYT Books API client
-│   │   └── googleBooksService.js     # Google Books API client
-│   └── utils/
-│       └── auth.js                   # Password hashing, JWT helpers, validation schemas
-frontend/
-├── src/
-│   ├── App.jsx                       # Root component with routing (ProtectedLayout wrapper)
-│   ├── components/
-│   │   ├── Layout.jsx                # Persistent sidebar shell for all authenticated pages
-│   │   ├── ProtectedRoute.jsx        # JWT auth guard
-│   │   ├── BookCard.jsx              # Book thumbnail card with wishlist button
-│   │   ├── WishlistItem.jsx          # Wishlist row with rating & summary editor
-│   │   ├── AddressForm.jsx
-│   │   ├── AddressList.jsx
-│   │   ├── PaymentMethodForm.jsx
-│   │   └── PaymentMethodList.jsx
-│   ├── context/
-│   │   └── AuthContext.jsx           # Auth state (localStorage token, JWT user)
-│   ├── pages/
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Store.jsx                 # Browse NYT bestsellers & Google Books; ?focus=search
-│   │   ├── BookDetail.jsx            # Full book info, ratings, add to wishlist
-│   │   ├── Wishlist.jsx              # Manage wishlist with ratings & summaries
-│   │   └── Profile.jsx               # Addresses & payments tabs via ?tab=payments
-│   └── services/
-│       └── api.js                    # Axios API client
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18+)
-- PostgreSQL (v14+)
-- NYT Books API key — [developer.nytimes.com](https://developer.nytimes.com/get-started)
-- Google Books API key — [console.cloud.google.com](https://console.cloud.google.com/)
-
-### PostgreSQL Installation
-
-**macOS (Homebrew):**
-```bash
-brew install postgresql@17
-brew services start postgresql@17
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
-
-**Windows:**
-
-Download and run the installer from https://www.postgresql.org/download/windows/. The installer includes pgAdmin and sets up PostgreSQL as a service automatically.
-
-### Database Setup
-
-1. Connect to PostgreSQL:
-   ```bash
-   psql postgres
-   ```
-
-2. Create the database and user:
-   ```sql
-   CREATE USER mylibrary_user WITH PASSWORD 'yourpassword';
-   CREATE DATABASE mylibrary OWNER mylibrary_user;
-   \q
-   ```
-
-3. Run the migrations in order:
-   ```bash
-   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/001_create_users.sql
-   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/002_create_addresses.sql
-   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/003_create_payment_methods.sql
-   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/004_create_wishlists.sql
-   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/005_create_book_summaries.sql
-   ```
-
-4. Verify the tables were created:
-   ```bash
-   psql -U mylibrary_user -d mylibrary -c "\dt"
-   ```
-   You should see `users`, `addresses`, `payment_methods`, `wishlists`, and `book_summaries` tables listed.
-
-## Running Locally
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/manimahesh/myLibrary.git
-cd myLibrary
-```
-
-### 2. Start the backend
-
-```bash
-cd backend
-npm install
-```
-
-Create `backend/.env`:
-```env
-PORT=3001
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=mylibrary
-DB_USER=mylibrary_user
-DB_PASSWORD=yourpassword
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-NYT_API_KEY=your_nyt_api_key
-GOOGLE_BOOKS_API_KEY=your_google_books_api_key
-```
-
-```bash
-npm run dev
-```
-
-The API will be available at `http://localhost:3001`.
-
-### 3. Start the frontend
-
-Open a new terminal tab:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app will be available at `http://localhost:5173`.
-
-> By default the frontend points to `http://localhost:3001/api`. To use a different backend URL, set `VITE_API_URL` in a `frontend/.env` file:
-> ```env
-> VITE_API_URL=http://your-backend-url/api
-> ```
-
-### Both servers must be running at the same time for the app to work.
-
-## API Endpoints
-
-### Auth (public)
-| Method | Endpoint             | Description        |
-|--------|----------------------|--------------------|
-| POST   | `/api/auth/register` | Create account     |
-| POST   | `/api/auth/login`    | Login, returns JWT |
-
-### Addresses (protected)
-| Method | Endpoint             | Description      |
-|--------|----------------------|------------------|
-| GET    | `/api/addresses`     | List addresses   |
-| POST   | `/api/addresses`     | Create address   |
-| PUT    | `/api/addresses/:id` | Update address   |
-| DELETE | `/api/addresses/:id` | Delete address   |
-
-### Payment Methods (protected)
-| Method | Endpoint            | Description           |
-|--------|---------------------|-----------------------|
-| GET    | `/api/payments`     | List payment methods  |
-| POST   | `/api/payments`     | Add payment method    |
-| PUT    | `/api/payments/:id` | Update payment method |
-| DELETE | `/api/payments/:id` | Delete payment method |
-
-### Books (protected)
-| Method | Endpoint                   | Description                              |
-|--------|----------------------------|------------------------------------------|
-| GET    | `/api/books/nyt-top`       | NYT hardcover-fiction top 10             |
-| GET    | `/api/books/google-search` | Google Books search (`?q=query`)         |
-| GET    | `/api/books/:id`           | Book detail by Google volume ID or ISBN  |
-
-### Wishlist (protected)
-| Method | Endpoint            | Description                  |
-|--------|---------------------|------------------------------|
-| GET    | `/api/wishlist`     | List wishlist items          |
-| POST   | `/api/wishlist`     | Add book (`{ book_id }`)     |
-| PUT    | `/api/wishlist/:id` | Update rating (`{ rating }`) |
-| DELETE | `/api/wishlist/:id` | Remove from wishlist         |
-
-### Book Summaries (protected)
-| Method | Endpoint                 | Description                                  |
-|--------|--------------------------|----------------------------------------------|
-| GET    | `/api/summaries/:bookId` | Get personal summary for a book              |
-| POST   | `/api/summaries`         | Create summary (`{ book_id, summary_text }`) |
-| PUT    | `/api/summaries/:id`     | Update summary (`{ summary_text }`)          |
-| DELETE | `/api/summaries/:id`     | Delete summary                               |
-
-All protected endpoints require an `Authorization: Bearer <token>` header.
+---
 
 ## Features
 
-- **Persistent sidebar** — Fixed left navigation shell across all authenticated pages with links to Store, Search, Wishlist, Profile, and Payment Methods
-- **Browse** — Search any book via Google Books, view NYT hardcover-fiction bestsellers, and explore curated picks. Navigate to `/store?focus=search` to auto-focus the search bar
-- **Book Detail** — Full book info including cover, publication date, page count, description, and aggregated Google Books ratings
-- **Wishlist** — Add/remove books, rate them 1–5 stars, and write personal reading notes per book. BookCard reflects existing wishlist state immediately via pre-fetch
-- **Profile** — Manage saved addresses and payment methods. Switch between tabs via URL param (`?tab=payments`) so the sidebar Payment Methods link navigates directly to that section
+### Discover Books
+Browse the **NYT Hardcover Fiction Top 10** updated weekly, explore **curated picks** from Google Books, or search the entire Google Books catalog by title, author, or ISBN. Every result shows the cover, author, and a one-click path to the full detail page.
+
+### Deep Book Detail
+Tap any title to see the full picture: cover art, publication date, page count, publisher, and **aggregated Google Books ratings** with star display. Add to your wishlist or mark as read without leaving the page.
+
+### Wishlist
+Save books you want to read. For each title in your wishlist you can:
+- Rate it **1–5 stars** once you've read it
+- Write **personal reading notes** — a private summary or reflection
+- **Mark it as read** directly from the wishlist with a specific date
+
+### Read Books
+Keep a permanent record of every book you've finished. Log the exact date you finished it using the **date picker** (defaults to today, but you can backdate any entry). Your read list is sorted most-recently-read first, and you can unmark any title if you added it by mistake.
+
+### Search That Remembers
+Search results persist in the URL. Browse search results, open a book detail, hit **Back** — and your results are right where you left them. No re-typing, no lost state.
+
+### Persistent Sidebar Navigation
+A fixed sidebar keeps every section one click away at all times:
+
+| Link | Destination |
+|------|-------------|
+| Store | Browse NYT bestsellers and curated picks |
+| Search | Jump straight to the search bar |
+| Wishlist | Your saved reading list |
+| Read Books | Books you've finished |
+| Profile | Saved addresses |
+| Payment Methods | Saved payment cards |
+
+### Profile & Account Management
+Store multiple **shipping addresses** and **payment method** records (card type, last four digits, expiry — no sensitive data stored). Set defaults, edit, or remove entries at any time.
+
+---
+
+## Ideal Workflow
+
+**Discovering something new**
+1. Open **Store** and browse the NYT Top 10 or curated picks
+2. See a title you like — click the card to read the full description and ratings
+3. Hit **+ Add to Wishlist** to save it for later, then **Back** to keep browsing
+
+**Searching for a specific book**
+1. Click **Search** in the sidebar (or type in the search bar on the Store page)
+2. Enter a title, author, or ISBN — results appear instantly
+3. Click any result to open its detail page; **Back** returns you to the same results
+
+**Finishing a book**
+1. Go to **Wishlist** and find the title
+2. Click **Mark as Read** and pick the date you finished it
+3. The book moves to your **Read Books** list — your personal reading history
+
+**Reflecting on what you read**
+1. Open **Wishlist**, find the book
+2. Give it a **star rating** and write a **personal summary** — your own notes, takeaways, or review
+3. Your notes are private and saved to your account
+
+**Managing your account**
+1. Click **Profile** in the sidebar for saved addresses
+2. Click **Payment Methods** to manage cards
+3. Both tabs are reachable directly from the sidebar — no drilling through menus
+
+---
+
+## Getting Started
+
+See [getting-started.md](./getting-started.md) for installation, database setup, environment variables, and local development instructions.

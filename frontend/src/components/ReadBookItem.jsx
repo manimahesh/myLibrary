@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 export default function ReadBookItem({ item, onUnmarked }) {
-  const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [removing, setRemoving] = useState(false);
 
@@ -36,33 +35,33 @@ export default function ReadBookItem({ item, onUnmarked }) {
   return (
     <div className="read-book-item">
       {thumbnail ? (
-        <img
-          src={thumbnail}
-          alt={title}
-          className="read-book-cover"
-          onClick={() => navigate(`/books/${encodeURIComponent(item.book_id)}`)}
-        />
+        <Link to={`/books/${encodeURIComponent(item.book_id)}`}>
+          <img
+            src={thumbnail}
+            alt={title}
+            className="read-book-cover"
+          />
+        </Link>
       ) : (
         <div className="read-book-cover-placeholder">No cover</div>
       )}
 
       <div className="read-book-body">
-        <div className="read-book-header">
-          <div>
-            <div
-              className="read-book-title"
-              onClick={() => navigate(`/books/${encodeURIComponent(item.book_id)}`)}
-            >
-              {title}
-            </div>
-            {author && <div className="read-book-author">{author}</div>}
-            <div className="read-book-date">Read on {readDate}</div>
-          </div>
+        <div className="read-book-info">
+          <Link
+            to={`/books/${encodeURIComponent(item.book_id)}`}
+            className="read-book-title"
+          >
+            {title}
+          </Link>
+          {author && <div className="read-book-author">{author}</div>}
+          <div className="read-book-date">Read on {readDate}</div>
+        </div>
+        <div className="read-book-actions">
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleUnmark}
             disabled={removing}
-            style={{ width: 'auto', flexShrink: 0 }}
           >
             {removing ? 'Removing...' : 'Unmark as Read'}
           </button>

@@ -6,8 +6,9 @@ export default function ReadDatePicker({ onConfirm, onCancel, loading = false })
 
   return (
     <div className="read-date-picker">
-      <label className="read-date-picker-label">Date read</label>
+      <label className="read-date-picker-label" htmlFor="read-date-input">Date read</label>
       <input
+        id="read-date-input"
         type="date"
         className="read-date-picker-input"
         value={date}
