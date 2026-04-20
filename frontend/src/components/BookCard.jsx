@@ -5,6 +5,8 @@ import ReadDatePicker from './ReadDatePicker';
 
 function toDisplayTitle(title) {
   if (!title || title.length <= 2) return title;
+  if (title.startsWith('isbn:')) return title.replace(/^isbn:/, 'ISBN: ');
+  if (title.startsWith('nyt-rank:')) return title.replace(/^nyt-rank:/, 'NYT Rank: ');
   if (title === title.toUpperCase()) {
     return title.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }

@@ -67,9 +67,11 @@ export default function Layout({ children }) {
     const email = user?.email;
     if (!email) return '?';
     const local = email.split('@')[0].replace(/[^a-zA-Z]/g, '');
-    const parts = email.split('@')[0].split(/[._-]/);
+    const parts = email.split('@')[0].split(/[._-]/).filter(Boolean);
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return local.length >= 2 ? (local[0] + local[1]).toUpperCase() : local[0].toUpperCase();
+    if (local.length >= 2) return (local[0] + local[1]).toUpperCase();
+    if (local.length === 1) return local[0].toUpperCase();
+    return '?';
   })();
   const params = new URLSearchParams(location.search);
   const isSearchFocus = location.pathname === '/store' && params.get('focus') === 'search';

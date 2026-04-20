@@ -91,9 +91,10 @@ async function changePassword(req, res) {
     const { error, value } = changePasswordSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
-    const fullUser = await User.findByEmail(
-      (await User.findById(req.user.userId)).email
-    );
+    const userById = await User.findById(req.user.userId);
+    if (!userById) return res.status(404).json({ error: 'User not found' });
+
+    const fullUser = await User.findByEmail(userById.email);
     if (!fullUser) return res.status(404).json({ error: 'User not found' });
 
     const valid = await comparePassword(value.current_password, fullUser.password_hash);
