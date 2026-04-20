@@ -88,7 +88,7 @@ export default function AddressList() {
           </div>
           <h3>No addresses yet</h3>
           <p>Add a shipping address to have it ready when you need it.</p>
-          <button className="btn btn-secondary" onClick={() => setShowForm(true)}>
+          <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setShowForm(true)}>
             Add your first address
           </button>
         </div>

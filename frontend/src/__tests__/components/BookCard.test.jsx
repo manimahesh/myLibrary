@@ -61,4 +61,13 @@ describe('BookCard', () => {
     renderCard({ inReadBooks: true, readBookId: 'r1', onReadToggle: vi.fn() });
     expect(screen.getByText(/✓ Read/i)).toBeInTheDocument();
   });
+
+  it('converts ALL_CAPS title to title case', () => {
+    render(
+      <MemoryRouter>
+        <BookCard book={{ ...book, title: 'THE GREAT GATSBY' }} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
+  });
 });

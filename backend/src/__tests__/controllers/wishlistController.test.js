@@ -3,7 +3,7 @@ const Wishlist = require('../../models/Wishlist');
 const { list, add, updateRating, remove } = require('../../controllers/wishlistController');
 
 function mockReq(overrides = {}) {
-  return { user: { userId: 'user-1' }, body: {}, params: {}, ...overrides };
+  return { user: { userId: 'user-1' }, body: {}, params: {}, query: {}, ...overrides };
 }
 function mockRes() {
   const res = {};
@@ -14,15 +14,14 @@ function mockRes() {
 
 describe('list', () => {
   it('returns all wishlist items', async () => {
-    const items = [{ id: 'i1' }];
-    Wishlist.findAllByUser.mockResolvedValue(items);
+    Wishlist.findPageByUser.mockResolvedValue({ items: [{ id: 'i1' }], total: 1 });
     const res = mockRes();
     await list(mockReq(), res);
-    expect(res.json).toHaveBeenCalledWith({ wishlist: items });
+    expect(res.json).toHaveBeenCalledWith({ wishlist: [{ id: 'i1' }], total: 1, limit: 10, offset: 0 });
   });
 
   it('returns 500 on error', async () => {
-    Wishlist.findAllByUser.mockRejectedValue(new Error('DB error'));
+    Wishlist.findPageByUser.mockRejectedValue(new Error('DB error'));
     const res = mockRes();
     await list(mockReq(), res);
     expect(res.status).toHaveBeenCalledWith(500);

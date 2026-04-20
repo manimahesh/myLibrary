@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ReadBookItem from '../components/ReadBookItem';
-import api from '../services/api';
+import Pagination from '../components/Pagination';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 function IconCheck() {
   return (
@@ -13,39 +13,40 @@ function IconCheck() {
 }
 
 export default function ReadBooks() {
-  const [readBooks, setReadBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const {
+    items: readBooks, total, totalPages, loading, error,
+    limit, setLimit, page, firstPage, prevPage, nextPage, lastPage, removeItem,
+  } = usePaginatedList('/read-books');
 
-  useEffect(() => {
-    let active = true;
-    api.get('/read-books')
-      .then(res => {
-        if (active) setReadBooks(Array.isArray(res.data.readBooks) ? res.data.readBooks : []);
-      })
-      .catch(() => {
-        if (active) setError('Failed to load read books.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, []);
-
-  function handleUnmarked(id) {
-    setReadBooks(prev => prev.filter(item => item.id !== id));
-  }
+  const paginationProps = { page, totalPages, total, limit, onFirst: firstPage, onPrev: prevPage, onNext: nextPage, onLast: lastPage };
 
   return (
     <div className="read-books-content">
       <div className="section-header">
         <div>
-          <h2 className="section-title">Read Books</h2>
-          <p className="section-desc">Books you've finished reading, ordered by most recently read</p>
+          <h2 className="section-title">Books I&apos;ve Read</h2>
+          <p className="section-desc">
+            Books you&apos;ve finished reading, ordered by most recently read
+            {total !== null && <span className="list-count"> · {total} book{total !== 1 ? 's' : ''}</span>}
+          </p>
         </div>
-        <Link to="/store" className="btn btn-secondary btn-sm" style={{ width: 'auto', textDecoration: 'none' }}>
-          Browse Books
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="per-page-picker">
+            <label htmlFor="readbooks-limit">Per page</label>
+            <select
+              id="readbooks-limit"
+              value={limit}
+              onChange={e => setLimit(e.target.value)}
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
+          <Link to="/store" className="btn btn-secondary btn-sm" style={{ width: 'auto', textDecoration: 'none' }}>
+            Browse Books
+          </Link>
+        </div>
       </div>
 
       {error && <p className="server-error">{error}</p>}
@@ -54,21 +55,23 @@ export default function ReadBooks() {
         <p style={{ color: 'var(--color-text-3)', fontSize: 14 }}>Loading...</p>
       ) : readBooks.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">
-            <IconCheck />
-          </div>
+          <div className="empty-state-icon"><IconCheck /></div>
           <h3>No books marked as read yet</h3>
-          <p>Use the "Mark as Read" button on any book to track what you've finished.</p>
+          <p>Use the &quot;Mark as Read&quot; button on any book to track what you&apos;ve finished.</p>
           <Link to="/store" className="btn btn-primary" style={{ textDecoration: 'none', marginTop: 8 }}>
             Browse Books
           </Link>
         </div>
       ) : (
-        <div className="read-books-list">
-          {readBooks.map(item => (
-            <ReadBookItem key={item.id} item={item} onUnmarked={handleUnmarked} />
-          ))}
-        </div>
+        <>
+          <Pagination {...paginationProps} />
+          <div className="read-books-list">
+            {readBooks.map(item => (
+              <ReadBookItem key={item.id} item={item} onUnmarked={removeItem} />
+            ))}
+          </div>
+          <Pagination {...paginationProps} />
+        </>
       )}
     </div>
   );

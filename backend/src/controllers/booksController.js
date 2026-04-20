@@ -34,6 +34,9 @@ async function getBookDetail(req, res) {
     res.json({ book });
   } catch (err) {
     console.error('Book detail error:', err);
+    if (err.message && err.message.includes('429')) {
+      return res.status(429).json({ error: 'Too many requests to book API, please try again shortly' });
+    }
     res.status(500).json({ error: 'Failed to fetch book details' });
   }
 }

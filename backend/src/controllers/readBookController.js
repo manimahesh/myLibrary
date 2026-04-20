@@ -1,4 +1,5 @@
 const ReadBook = require('../models/ReadBook');
+const { getBookDetails } = require('../services/googleBooksService');
 const Joi = require('joi');
 const { validate: isValidUUID } = require('uuid');
 
@@ -9,8 +10,10 @@ const markSchema = Joi.object({
 
 async function list(req, res) {
   try {
-    const readBooks = await ReadBook.findAllByUser(req.user.userId);
-    res.json({ readBooks });
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 25);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const { items, total } = await ReadBook.findPageByUser(req.user.userId, limit, offset);
+    res.json({ readBooks: items, total, limit, offset });
   } catch (err) {
     console.error('List read books error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -30,6 +33,10 @@ async function markAsRead(req, res) {
     }
 
     const item = await ReadBook.create(req.user.userId, value.book_id, value.read_at);
+
+    // Warm the DB book cache so future list loads don't need to hit Google
+    getBookDetails(value.book_id).catch(() => {});
+
     res.status(201).json({ item });
   } catch (err) {
     console.error('Mark as read error:', err);

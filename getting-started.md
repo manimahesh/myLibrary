@@ -1,6 +1,6 @@
 # MyLibrary
 
-A full-stack web application built with Node.js/Express, React, and PostgreSQL featuring user authentication, a bookstore browsing experience, wishlist management, and personal book summaries.
+A full-stack web application built with Node.js/Express, React, and PostgreSQL featuring user authentication, a bookstore browsing experience, wishlist management, books-read tracking with pagination, and personal book summaries.
 
 ## Tech Stack
 
@@ -19,11 +19,12 @@ backend/
 │   │   ├── index.js                  # Environment variable config
 │   │   └── database.js               # PostgreSQL connection pool
 │   ├── controllers/
-│   │   ├── authController.js         # Register & login handlers
+│   │   ├── authController.js         # Register, login, profile, password-change
 │   │   ├── addressController.js
 │   │   ├── paymentController.js
 │   │   ├── booksController.js        # NYT & Google Books proxy
-│   │   ├── wishlistController.js
+│   │   ├── wishlistController.js     # Paginated wishlist management
+│   │   ├── readBookController.js     # Mark/unmark books as read (paginated)
 │   │   └── bookSummaryController.js
 │   ├── middleware/
 │   │   └── auth.js                   # JWT verification middleware
@@ -32,23 +33,31 @@ backend/
 │   │   ├── 002_create_addresses.sql
 │   │   ├── 003_create_payment_methods.sql
 │   │   ├── 004_create_wishlists.sql
-│   │   └── 005_create_book_summaries.sql
+│   │   ├── 005_create_book_summaries.sql
+│   │   ├── 006_create_read_books.sql
+│   │   ├── 007_add_user_name.sql     # Adds first_name, last_name to users
+│   │   └── 008_create_books_cache.sql # Books metadata cache table
 │   ├── models/
 │   │   ├── User.js
 │   │   ├── Address.js
 │   │   ├── PaymentMethod.js
-│   │   ├── Wishlist.js
-│   │   └── BookSummary.js
+│   │   ├── Wishlist.js               # findPageByUser for pagination
+│   │   ├── ReadBook.js               # findPageByUser for pagination
+│   │   ├── BookSummary.js
+│   │   └── Book.js                   # Books cache: upsert + findById
 │   ├── routes/
 │   │   ├── auth.js
 │   │   ├── address.js
 │   │   ├── payment.js
 │   │   ├── books.js
 │   │   ├── wishlist.js
+│   │   ├── readBooks.js
 │   │   └── bookSummary.js
+│   ├── scripts/
+│   │   └── backfill_books_cache.js   # One-shot: populate books cache from existing records
 │   ├── services/
 │   │   ├── nytBooksService.js        # NYT Books API client
-│   │   └── googleBooksService.js     # Google Books API client
+│   │   └── googleBooksService.js     # Google Books API client with DB cache + rate-limit queue
 │   └── utils/
 │       └── auth.js                   # Password hashing, JWT helpers, validation schemas
 frontend/
@@ -56,24 +65,29 @@ frontend/
 │   ├── App.jsx                       # Root component with routing (ProtectedLayout wrapper)
 │   ├── components/
 │   │   ├── Layout.jsx                # Persistent sidebar shell for all authenticated pages
+│   │   ├── Pagination.jsx            # «‹ X–Y of N ›» pagination bar
 │   │   ├── ProtectedRoute.jsx        # JWT auth guard
-│   │   ├── BookCard.jsx              # Book thumbnail card with wishlist button
+│   │   ├── BookCard.jsx              # Book thumbnail card with wishlist/read buttons
 │   │   ├── WishlistItem.jsx          # Wishlist row with rating & summary editor
+│   │   ├── ReadBookItem.jsx          # Read-books row with unmark button
 │   │   ├── AddressForm.jsx
 │   │   ├── AddressList.jsx
 │   │   ├── PaymentMethodForm.jsx
 │   │   └── PaymentMethodList.jsx
 │   ├── context/
-│   │   └── AuthContext.jsx           # Auth state (localStorage token, JWT user)
+│   │   └── AuthContext.jsx           # Auth state (localStorage token + user object)
+│   ├── hooks/
+│   │   └── usePaginatedList.js       # Shared page-based pagination hook
 │   ├── pages/
 │   │   ├── Login.jsx
 │   │   ├── Register.jsx
 │   │   ├── Store.jsx                 # Browse NYT bestsellers & Google Books; ?focus=search
-│   │   ├── BookDetail.jsx            # Full book info, ratings, add to wishlist
-│   │   ├── Wishlist.jsx              # Manage wishlist with ratings & summaries
-│   │   └── Profile.jsx               # Addresses & payments tabs via ?tab=payments
+│   │   ├── BookDetail.jsx            # Full book info, ratings, add to wishlist / mark as read
+│   │   ├── Wishlist.jsx              # Paginated wishlist with ratings & summaries
+│   │   ├── ReadBooks.jsx             # Paginated list of books marked as read
+│   │   └── Profile.jsx              # Multi-tab: Profile Info, Change Password, Addresses, Payments
 │   └── services/
-│       └── api.js                    # Axios API client
+│       └── api.js                    # Axios API client (auto-injects JWT, 401 redirect)
 ```
 
 ## Getting Started
@@ -119,20 +133,23 @@ Download and run the installer from https://www.postgresql.org/download/windows/
    \q
    ```
 
-3. Run the migrations in order:
+3. Run all migrations in order:
    ```bash
    psql -U mylibrary_user -d mylibrary -f backend/src/migrations/001_create_users.sql
    psql -U mylibrary_user -d mylibrary -f backend/src/migrations/002_create_addresses.sql
    psql -U mylibrary_user -d mylibrary -f backend/src/migrations/003_create_payment_methods.sql
    psql -U mylibrary_user -d mylibrary -f backend/src/migrations/004_create_wishlists.sql
    psql -U mylibrary_user -d mylibrary -f backend/src/migrations/005_create_book_summaries.sql
+   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/006_create_read_books.sql
+   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/007_add_user_name.sql
+   psql -U mylibrary_user -d mylibrary -f backend/src/migrations/008_create_books_cache.sql
    ```
 
 4. Verify the tables were created:
    ```bash
    psql -U mylibrary_user -d mylibrary -c "\dt"
    ```
-   You should see `users`, `addresses`, `payment_methods`, `wishlists`, and `book_summaries` tables listed.
+   You should see: `users`, `addresses`, `payment_methods`, `wishlists`, `book_summaries`, `read_books`, `books`.
 
 ## Running Locally
 
@@ -191,13 +208,18 @@ The app will be available at `http://localhost:5173`.
 
 ## API Endpoints
 
-### Auth (public)
-| Method | Endpoint             | Description        |
-|--------|----------------------|--------------------|
-| POST   | `/api/auth/register` | Create account     |
-| POST   | `/api/auth/login`    | Login, returns JWT |
+### Auth
+
+| Method | Endpoint                       | Description                        |
+|--------|--------------------------------|------------------------------------|
+| POST   | `/api/auth/register`           | Create account                     |
+| POST   | `/api/auth/login`              | Login, returns JWT                 |
+| GET    | `/api/auth/me`                 | Get current user profile           |
+| PUT    | `/api/auth/me`                 | Update first_name / last_name      |
+| PUT    | `/api/auth/change-password`    | Change password (requires current) |
 
 ### Addresses (protected)
+
 | Method | Endpoint             | Description      |
 |--------|----------------------|------------------|
 | GET    | `/api/addresses`     | List addresses   |
@@ -206,6 +228,7 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/addresses/:id` | Delete address   |
 
 ### Payment Methods (protected)
+
 | Method | Endpoint            | Description           |
 |--------|---------------------|-----------------------|
 | GET    | `/api/payments`     | List payment methods  |
@@ -214,21 +237,32 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/payments/:id` | Delete payment method |
 
 ### Books (protected)
-| Method | Endpoint                   | Description                              |
-|--------|----------------------------|------------------------------------------|
-| GET    | `/api/books/nyt-top`       | NYT hardcover-fiction top 10             |
-| GET    | `/api/books/google-search` | Google Books search (`?q=query`)         |
-| GET    | `/api/books/:id`           | Book detail by Google volume ID or ISBN  |
+
+| Method | Endpoint                   | Description                                     |
+|--------|----------------------------|-------------------------------------------------|
+| GET    | `/api/books/nyt-top`       | NYT hardcover-fiction top 10                    |
+| GET    | `/api/books/google-search` | Google Books search (`?q=query`)                |
+| GET    | `/api/books/:id`           | Book detail by Google volume ID, ISBN, or rank  |
 
 ### Wishlist (protected)
-| Method | Endpoint            | Description                  |
-|--------|---------------------|------------------------------|
-| GET    | `/api/wishlist`     | List wishlist items          |
-| POST   | `/api/wishlist`     | Add book (`{ book_id }`)     |
-| PUT    | `/api/wishlist/:id` | Update rating (`{ rating }`) |
-| DELETE | `/api/wishlist/:id` | Remove from wishlist         |
+
+| Method | Endpoint            | Description                                        |
+|--------|---------------------|----------------------------------------------------|
+| GET    | `/api/wishlist`     | List wishlist items (`?limit=10&offset=0`)         |
+| POST   | `/api/wishlist`     | Add book (`{ book_id }`)                           |
+| PUT    | `/api/wishlist/:id` | Update rating (`{ rating }`)                       |
+| DELETE | `/api/wishlist/:id` | Remove from wishlist                               |
+
+### Read Books (protected)
+
+| Method | Endpoint               | Description                                       |
+|--------|------------------------|---------------------------------------------------|
+| GET    | `/api/read-books`      | List read books (`?limit=10&offset=0`)            |
+| POST   | `/api/read-books`      | Mark as read (`{ book_id, read_at? }`)            |
+| DELETE | `/api/read-books/:id`  | Unmark as read                                    |
 
 ### Book Summaries (protected)
+
 | Method | Endpoint                 | Description                                  |
 |--------|--------------------------|----------------------------------------------|
 | GET    | `/api/summaries/:bookId` | Get personal summary for a book              |
@@ -240,8 +274,10 @@ All protected endpoints require an `Authorization: Bearer <token>` header.
 
 ## Features
 
-- **Persistent sidebar** — Fixed left navigation shell across all authenticated pages with links to Store, Search, Wishlist, Profile, and Payment Methods
-- **Browse** — Search any book via Google Books, view NYT hardcover-fiction bestsellers, and explore curated picks. Navigate to `/store?focus=search` to auto-focus the search bar
-- **Book Detail** — Full book info including cover, publication date, page count, description, and aggregated Google Books ratings
-- **Wishlist** — Add/remove books, rate them 1–5 stars, and write personal reading notes per book. BookCard reflects existing wishlist state immediately via pre-fetch
-- **Profile** — Manage saved addresses and payment methods. Switch between tabs via URL param (`?tab=payments`) so the sidebar Payment Methods link navigates directly to that section
+- **Persistent sidebar** — Fixed left navigation across all authenticated pages: Store, Search, Wishlist, Books I've Read, Profile
+- **Browse** — Search any book via Google Books, view NYT hardcover-fiction bestsellers. Navigate to `/store?focus=search` to auto-focus the search bar
+- **Book Detail** — Full book info including cover, publication date, page count, description, and aggregated Google Books ratings. Mark as read with optional date picker
+- **Wishlist** — Add/remove books, rate them 1–5 stars, and write personal reading notes. Paginated with configurable page size (10/15/25)
+- **Books I've Read** — Track books you've finished reading with the date read. Paginated list with `«‹ 1–10 of N ›»` navigation at the top and bottom
+- **Profile** — Multi-tab page: edit display name, change password, manage saved addresses and payment methods. Tabs accessible via `?tab=profile|password|addresses|payments`
+- **Books Cache** — Book metadata (title, author, cover) is cached in PostgreSQL after first lookup so Wishlist and Read Books pages never hit the Google Books API on load

@@ -17,6 +17,17 @@ describe('Wishlist model', () => {
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY'), [userId]);
   });
 
+  it('findPageByUser() returns { items, total } using parallel queries', async () => {
+    const rows = [{ id: itemId, user_id: userId, book_id: bookId }];
+    db.query
+      .mockResolvedValueOnce({ rows })
+      .mockResolvedValueOnce({ rows: [{ count: '5' }] });
+
+    const result = await Wishlist.findPageByUser(userId, 10, 0);
+    expect(result).toEqual({ items: rows, total: 5 });
+    expect(db.query).toHaveBeenCalledTimes(2);
+  });
+
   it('findByBookId() returns the item when found', async () => {
     const row = { id: itemId };
     db.query.mockResolvedValue({ rows: [row] });

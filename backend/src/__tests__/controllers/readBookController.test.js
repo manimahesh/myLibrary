@@ -3,7 +3,7 @@ const ReadBook = require('../../models/ReadBook');
 const { list, markAsRead, unmarkAsRead } = require('../../controllers/readBookController');
 
 function mockReq(overrides = {}) {
-  return { user: { userId: 'user-1' }, body: {}, params: {}, ...overrides };
+  return { user: { userId: 'user-1' }, body: {}, params: {}, query: {}, ...overrides };
 }
 function mockRes() {
   const res = {};
@@ -14,15 +14,14 @@ function mockRes() {
 
 describe('list', () => {
   it('returns all read books', async () => {
-    const items = [{ id: 'r1' }];
-    ReadBook.findAllByUser.mockResolvedValue(items);
+    ReadBook.findPageByUser.mockResolvedValue({ items: [{ id: 'r1' }], total: 1 });
     const res = mockRes();
     await list(mockReq(), res);
-    expect(res.json).toHaveBeenCalledWith({ readBooks: items });
+    expect(res.json).toHaveBeenCalledWith({ readBooks: [{ id: 'r1' }], total: 1, limit: 10, offset: 0 });
   });
 
   it('returns 500 on error', async () => {
-    ReadBook.findAllByUser.mockRejectedValue(new Error('DB error'));
+    ReadBook.findPageByUser.mockRejectedValue(new Error('DB error'));
     const res = mockRes();
     await list(mockReq(), res);
     expect(res.status).toHaveBeenCalledWith(500);

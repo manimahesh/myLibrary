@@ -14,7 +14,18 @@ describe('ReadBook model', () => {
     db.query.mockResolvedValue({ rows });
     const result = await ReadBook.findAllByUser(userId);
     expect(result).toEqual(rows);
-    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY read_at DESC'), [userId]);
+    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY r.read_at DESC'), [userId]);
+  });
+
+  it('findPageByUser() returns { items, total } using parallel queries', async () => {
+    const rows = [{ id: recordId, user_id: userId, book_id: bookId }];
+    db.query
+      .mockResolvedValueOnce({ rows })
+      .mockResolvedValueOnce({ rows: [{ count: '5' }] });
+
+    const result = await ReadBook.findPageByUser(userId, 10, 0);
+    expect(result).toEqual({ items: rows, total: 5 });
+    expect(db.query).toHaveBeenCalledTimes(2);
   });
 
   it('findByBookId() returns the record when found', async () => {

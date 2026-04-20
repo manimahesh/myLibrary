@@ -1,3 +1,9 @@
+jest.mock('../../models/Book', () => ({
+  findById: jest.fn().mockResolvedValue(null),
+  upsert: jest.fn().mockResolvedValue({}),
+}));
+
+const Book = require('../../models/Book');
 const { searchBooks, getBookDetails } = require('../../services/googleBooksService');
 
 const mockVolume = {
@@ -43,7 +49,10 @@ describe('googleBooksService.searchBooks', () => {
 });
 
 describe('googleBooksService.getBookDetails', () => {
-  beforeEach(() => { global.fetch = jest.fn(); });
+  beforeEach(() => {
+    global.fetch = jest.fn();
+    Book.findById.mockResolvedValue(null);
+  });
 
   it('returns normalized book for a Google volume ID', async () => {
     global.fetch.mockResolvedValue({
