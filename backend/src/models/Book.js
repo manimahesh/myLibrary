@@ -1,5 +1,11 @@
 const db = require('../config/database');
 
+/**
+ * Books cache table.
+ * Records are written through by googleBooksService on every successful
+ * Google API fetch. Wishlist and ReadBook queries LEFT JOIN this table so
+ * list pages never call the Google API for already-seen books.
+ */
 const Book = {
   async upsert({ book_id, title, author, thumbnail, description, published_date, page_count, average_rating, ratings_count, publisher, categories }) {
     const result = await db.query(

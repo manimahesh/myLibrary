@@ -1,3 +1,29 @@
+/**
+ * Page-based pagination hook for list endpoints.
+ *
+ * Fetches one page at a time. Changing `limit` resets to page 0.
+ * Both `/wishlist` and `/read-books` endpoints are supported via
+ * `extractPayload`, which handles their different response root keys.
+ *
+ * @param {string} endpoint - API path, e.g. '/wishlist' or '/read-books'
+ * @param {object} [options]
+ * @param {number} [options.limit=10] - Initial page size (clamped to 1–25)
+ * @returns {{
+ *   items: Array,
+ *   total: number|null,
+ *   totalPages: number|null,
+ *   loading: boolean,
+ *   error: string,
+ *   limit: number,
+ *   page: number,
+ *   setLimit: (n: number) => void,
+ *   firstPage: () => void,
+ *   prevPage: () => void,
+ *   nextPage: () => void,
+ *   lastPage: () => void,
+ *   removeItem: (id: string) => void,
+ * }}
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 

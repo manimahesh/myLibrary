@@ -31,7 +31,7 @@ async function runMigrations() {
 
 async function clearTables() {
   await pool.query(`
-    TRUNCATE TABLE book_summaries, read_books, wishlists, payment_methods, addresses, users
+    TRUNCATE TABLE book_summaries, read_books, wishlists, payment_methods, addresses, users, books
     RESTART IDENTITY CASCADE
   `);
 }

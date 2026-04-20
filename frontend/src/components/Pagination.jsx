@@ -1,3 +1,8 @@
+/**
+ * Pagination bar: «‹ X–Y of N ›»
+ * Renders nothing when total is 0 or null.
+ * Intended to be placed at both the top and bottom of a list.
+ */
 export default function Pagination({ page, totalPages, total, limit, onFirst, onPrev, onNext, onLast }) {
   if (!total) return null;
   const rangeStart = page * limit + 1;
