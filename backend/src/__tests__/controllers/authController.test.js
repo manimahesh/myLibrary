@@ -162,7 +162,7 @@ describe('changePassword', () => {
     User.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', password_hash: 'oldhash' });
     comparePassword.mockResolvedValue(true);
     hashPassword.mockResolvedValue('newhash');
-    User.updatePassword.mockResolvedValue();
+    User.updatePassword.mockResolvedValue(true);
     const req = { user: { userId: 'u1' }, body: {} };
     const res = mockRes();
     await changePassword(req, res);

@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../../app');
-const { runMigrations, clearTables, closePool } = require('./helpers');
+const { runMigrations, clearTables, createTestUser, closePool } = require('./helpers');
 
 beforeAll(() => runMigrations());
 afterEach(() => clearTables());

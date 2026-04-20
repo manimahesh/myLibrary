@@ -209,6 +209,7 @@ The app will be available at `http://localhost:5173`.
 ## API Endpoints
 
 ### Auth
+
 | Method | Endpoint                       | Description                        |
 |--------|--------------------------------|------------------------------------|
 | POST   | `/api/auth/register`           | Create account                     |
@@ -218,6 +219,7 @@ The app will be available at `http://localhost:5173`.
 | PUT    | `/api/auth/change-password`    | Change password (requires current) |
 
 ### Addresses (protected)
+
 | Method | Endpoint             | Description      |
 |--------|----------------------|------------------|
 | GET    | `/api/addresses`     | List addresses   |
@@ -226,6 +228,7 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/addresses/:id` | Delete address   |
 
 ### Payment Methods (protected)
+
 | Method | Endpoint            | Description           |
 |--------|---------------------|-----------------------|
 | GET    | `/api/payments`     | List payment methods  |
@@ -234,6 +237,7 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/payments/:id` | Delete payment method |
 
 ### Books (protected)
+
 | Method | Endpoint                   | Description                                     |
 |--------|----------------------------|-------------------------------------------------|
 | GET    | `/api/books/nyt-top`       | NYT hardcover-fiction top 10                    |
@@ -241,6 +245,7 @@ The app will be available at `http://localhost:5173`.
 | GET    | `/api/books/:id`           | Book detail by Google volume ID, ISBN, or rank  |
 
 ### Wishlist (protected)
+
 | Method | Endpoint            | Description                                        |
 |--------|---------------------|----------------------------------------------------|
 | GET    | `/api/wishlist`     | List wishlist items (`?limit=10&offset=0`)         |
@@ -249,6 +254,7 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/wishlist/:id` | Remove from wishlist                               |
 
 ### Read Books (protected)
+
 | Method | Endpoint               | Description                                       |
 |--------|------------------------|---------------------------------------------------|
 | GET    | `/api/read-books`      | List read books (`?limit=10&offset=0`)            |
@@ -256,6 +262,7 @@ The app will be available at `http://localhost:5173`.
 | DELETE | `/api/read-books/:id`  | Unmark as read                                    |
 
 ### Book Summaries (protected)
+
 | Method | Endpoint                 | Description                                  |
 |--------|--------------------------|----------------------------------------------|
 | GET    | `/api/summaries/:bookId` | Get personal summary for a book              |

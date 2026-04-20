@@ -7,7 +7,7 @@ const Wishlist = {
        FROM wishlists w
        LEFT JOIN books b ON b.book_id = w.book_id
        WHERE w.user_id = $1
-       ORDER BY w.created_at DESC`,
+       ORDER BY w.created_at DESC, w.id`,
       [userId]
     );
     return result.rows;
@@ -20,7 +20,7 @@ const Wishlist = {
          FROM wishlists w
          LEFT JOIN books b ON b.book_id = w.book_id
          WHERE w.user_id = $1
-         ORDER BY w.created_at DESC
+         ORDER BY w.created_at DESC, w.id
          LIMIT $2 OFFSET $3`,
         [userId, limit, offset]
       ),

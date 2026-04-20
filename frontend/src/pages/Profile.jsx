@@ -221,7 +221,9 @@ const TABS = [
 export default function Profile() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'profile';
+  const VALID_TABS = new Set(['profile', 'password', 'addresses', 'payments']);
+  const rawTab = searchParams.get('tab');
+  const activeTab = VALID_TABS.has(rawTab) ? rawTab : 'profile';
 
   const initials = (() => {
     if (user?.first_name && user?.last_name) return (user.first_name[0] + user.last_name[0]).toUpperCase();
@@ -245,7 +247,7 @@ export default function Profile() {
           <div className="navbar-avatar profile-sidebar-avatar">{initials}</div>
           <div className="profile-sidebar-user-info">
             {displayName && <div className="profile-sidebar-name">{displayName}</div>}
-            {user?.first_name && <div className="profile-sidebar-email">{user.email}</div>}
+            {user?.email && <div className="profile-sidebar-email">{user.email}</div>}
           </div>
         </div>
 

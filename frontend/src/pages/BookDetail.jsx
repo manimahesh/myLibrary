@@ -115,6 +115,8 @@ export default function BookDetail() {
       await api.delete(`/read-books/${readBookId}`);
       setIsRead(false);
       setReadBookId(null);
+    } catch (err) {
+      console.error('Failed to unmark as read:', err);
     } finally {
       setTogglingRead(false);
     }

@@ -79,6 +79,7 @@ async function updateMe(req, res) {
     if (error) return res.status(400).json({ error: error.details[0].message });
 
     const user = await User.updateProfile(req.user.userId, value.first_name, value.last_name);
+    if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ user });
   } catch (err) {
     console.error('updateMe error:', err);
@@ -101,7 +102,8 @@ async function changePassword(req, res) {
     if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
 
     const newHash = await hashPassword(value.new_password);
-    await User.updatePassword(req.user.userId, newHash);
+    const updated = await User.updatePassword(req.user.userId, newHash);
+    if (!updated) return res.status(404).json({ error: 'User not found' });
 
     res.json({ message: 'Password updated successfully' });
   } catch (err) {

@@ -64,9 +64,11 @@ function parseCsv(content) {
     if (!title) continue;
 
     const cleanIsbn = isbn13 ? isbn13.trim().replace(/-/g, '') : '';
+    const slug = toSlug(title);
+    if (!isValidIsbn(cleanIsbn) && !slug) continue;
     const bookId = isValidIsbn(cleanIsbn)
       ? `isbn:${cleanIsbn}`
-      : `title:${toSlug(title)}`;
+      : `title:${slug}`;
 
     rows.push({ title, bookId });
   }
@@ -102,14 +104,18 @@ async function main() {
 
     for (const { title, bookId } of books) {
       try {
-        await pool.query(
+        const result = await pool.query(
           `INSERT INTO read_books (user_id, book_id, read_at)
            VALUES ($1, $2, $3)
            ON CONFLICT (user_id, book_id) DO NOTHING`,
           [userId, bookId, TODAY]
         );
-        inserted++;
-        console.log(`  ✓ ${bookId.slice(0, 60)}`);
+        if (result.rowCount === 1) {
+          inserted++;
+          console.log(`  ✓ ${bookId.slice(0, 60)}`);
+        } else {
+          skipped++;
+        }
       } catch (err) {
         console.warn(`  ✗ Skipped "${title}": ${err.message}`);
         skipped++;

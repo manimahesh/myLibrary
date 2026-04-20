@@ -41,12 +41,14 @@ export default function Store() {
 
   // Pre-fetch wishlist and read books
   useEffect(() => {
+    let active = true;
     api.get('/wishlist')
-      .then(res => setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))))
+      .then(res => { if (active) setWishlistIds(new Set(res.data.wishlist.map(i => i.book_id))); })
       .catch(() => {});
     api.get('/read-books')
-      .then(res => setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))))
+      .then(res => { if (active) setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id]))); })
       .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   function handleAddedToWishlist(bookId) {

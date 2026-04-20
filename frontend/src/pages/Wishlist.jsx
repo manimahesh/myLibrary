@@ -23,13 +23,25 @@ export default function Wishlist() {
 
   useEffect(() => {
     let active = true;
-    api.get('/read-books?limit=25&offset=0')
-      .then(res => {
-        if (!active) return;
-        const map = new Map((res.data.readBooks || []).map(i => [i.book_id, i.id]));
-        setReadBooksMap(map);
-      })
-      .catch(() => {});
+    async function loadAllReadBooks() {
+      const pageSize = 25;
+      let offset = 0;
+      const all = [];
+      while (true) {
+        try {
+          const res = await api.get(`/read-books?limit=${pageSize}&offset=${offset}`);
+          if (!active) return;
+          const { readBooks = [], total = 0 } = res.data;
+          all.push(...readBooks);
+          offset += readBooks.length;
+          if (all.length >= total || readBooks.length === 0) break;
+        } catch {
+          break;
+        }
+      }
+      if (active) setReadBooksMap(new Map(all.map(i => [i.book_id, i.id])));
+    }
+    loadAllReadBooks();
     return () => { active = false; };
   }, []);
 

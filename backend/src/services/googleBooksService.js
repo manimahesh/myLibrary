@@ -36,7 +36,7 @@ async function fetchWithRetry(fetchFn, retries = 3, baseDelayMs = 2000) {
     try {
       return await fetchFn();
     } catch (err) {
-      const is429 = err.message && err.message.includes('429');
+      const is429 = err.status === 429;
       if (is429 && attempt < retries) {
         await new Promise(r => setTimeout(r, baseDelayMs * (attempt + 1)));
         continue;
@@ -63,7 +63,9 @@ async function searchBooks(query, maxResults = 12) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+      const err = new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+      err.status = response.status;
+      throw err;
     }
     const data = await response.json();
     return (data.items || []).map(normalizeVolume);
@@ -106,7 +108,8 @@ async function getBookDetails(bookId) {
       const isbn = bookId.slice(5);
       book = await fetchWithRetry(async () => {
         const results = await searchBooks(`isbn:${isbn}`, 1);
-        return results[0] || null;
+        if (!results[0]) return null;
+        return { ...results[0], id: bookId };
       });
     } else {
       const url = `${GOOGLE_BASE_URL}/volumes/${encodeURIComponent(bookId)}?key=${config.googleBooksApiKey}`;
@@ -116,7 +119,11 @@ async function getBookDetails(bookId) {
         try {
           const response = await fetch(url, { signal: controller.signal });
           clearTimeout(timeoutId);
-          if (!response.ok) throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+          if (!response.ok) {
+            const err = new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+            err.status = response.status;
+            throw err;
+          }
           return normalizeVolume(await response.json());
         } catch (err) {
           clearTimeout(timeoutId);

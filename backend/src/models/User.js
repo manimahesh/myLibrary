@@ -27,20 +27,24 @@ const User = {
   async updateProfile(id, firstName, lastName) {
     if (!isValidUUID(id)) return null;
     const result = await db.query(
-      `UPDATE users SET first_name = $1, last_name = $2, updated_at = NOW()
+      `UPDATE users SET
+         first_name = COALESCE($1, first_name),
+         last_name  = COALESCE($2, last_name),
+         updated_at = NOW()
        WHERE id = $3
        RETURNING id, email, first_name, last_name, created_at, updated_at`,
-      [firstName || null, lastName || null, id]
+      [firstName ?? null, lastName ?? null, id]
     );
     return result.rows[0] || null;
   },
 
   async updatePassword(id, newHash) {
-    if (!isValidUUID(id)) throw new Error(`Invalid UUID: ${id}`);
-    await db.query(
+    if (!isValidUUID(id)) return false;
+    const result = await db.query(
       'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newHash, id]
     );
+    return result.rowCount > 0;
   },
 };
 

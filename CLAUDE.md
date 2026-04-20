@@ -80,7 +80,7 @@ If `TEST_DB_*` vars are absent the helpers fall back to `DB_*`.
 - `src/models/Book.js` — books cache table: `upsert()` and `findById()`; used by googleBooksService for write-through caching
 - `src/services/nytBooksService.js` — NYT Books API; returns books with IDs `isbn:{isbn13}` or `nyt-rank:{rank}`
 - `src/services/googleBooksService.js` — Google Books search + detail; multi-layer cache: in-memory (1hr TTL) → DB (`books` table) → Google API; in-flight deduplication via `Map`; 200ms sequential queue to stay under rate limits; 3-retry exponential backoff on 429s
-- `src/scripts/backfill_books_cache.js` — one-shot script to populate the `books` cache table for existing wishlist/read_books records that predate the cache
+- `scripts/backfill_books_cache.js` — one-shot script to populate the `books` cache table for existing wishlist/read_books records that predate the cache; runs in batches of 10 with a 15-minute pause between batches
 
 API routes: `/api/auth`, `/api/addresses`, `/api/payments`, `/api/books`, `/api/wishlist`, `/api/summaries`, `/api/read-books`. Route mount order in `app.js` matters for `/api/books` — `/nyt-top` and `/google-search` must come before `/:id`.
 

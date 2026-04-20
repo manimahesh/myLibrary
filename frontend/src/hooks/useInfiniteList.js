@@ -49,9 +49,11 @@ export function useInfiniteList(endpoint, { limit: initialLimit = DEFAULT_LIMIT 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
     setLoadingMore(true);
+    const token = {};
+    activeRef._loadMoreToken = token;
     try {
       const res = await api.get(`${endpoint}?limit=${limit}&offset=${offsetRef.current}`);
-      if (!activeRef.current) return;
+      if (!activeRef.current || activeRef._loadMoreToken !== token) return;
       const { items: newItems } = extractPayload(endpoint, res.data);
       setItems(prev => [...prev, ...newItems]);
       offsetRef.current += newItems.length;
@@ -68,7 +70,11 @@ export function useInfiniteList(endpoint, { limit: initialLimit = DEFAULT_LIMIT 
   }
 
   function removeItem(id) {
-    setItems(prev => prev.filter(item => item.id !== id));
+    setItems(prev => {
+      const next = prev.filter(item => item.id !== id);
+      if (next.length < prev.length) offsetRef.current = Math.max(0, offsetRef.current - 1);
+      return next;
+    });
     setTotal(prev => (prev !== null ? prev - 1 : prev));
   }
 

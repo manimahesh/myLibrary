@@ -7,7 +7,7 @@ const ReadBook = {
        FROM read_books r
        LEFT JOIN books b ON b.book_id = r.book_id
        WHERE r.user_id = $1
-       ORDER BY r.read_at DESC`,
+       ORDER BY r.read_at DESC, r.id`,
       [userId]
     );
     return result.rows;
@@ -20,7 +20,7 @@ const ReadBook = {
          FROM read_books r
          LEFT JOIN books b ON b.book_id = r.book_id
          WHERE r.user_id = $1
-         ORDER BY r.read_at DESC
+         ORDER BY r.read_at DESC, r.id
          LIMIT $2 OFFSET $3`,
         [userId, limit, offset]
       ),
