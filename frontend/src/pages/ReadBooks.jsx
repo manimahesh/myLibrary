@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import ReadBookItem from '../components/ReadBookItem';
-import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
-import { useInfiniteList } from '../hooks/useInfiniteList';
+import Pagination from '../components/Pagination';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 function IconCheck() {
   return (
@@ -14,9 +14,11 @@ function IconCheck() {
 
 export default function ReadBooks() {
   const {
-    items: readBooks, total, loading, loadingMore, hasMore, error,
-    limit, setLimit, loadMore, removeItem,
-  } = useInfiniteList('/read-books');
+    items: readBooks, total, totalPages, loading, error,
+    limit, setLimit, page, firstPage, prevPage, nextPage, lastPage, removeItem,
+  } = usePaginatedList('/read-books');
+
+  const paginationProps = { page, totalPages, total, limit, onFirst: firstPage, onPrev: prevPage, onNext: nextPage, onLast: lastPage };
 
   return (
     <div className="read-books-content">
@@ -62,24 +64,13 @@ export default function ReadBooks() {
         </div>
       ) : (
         <>
+          <Pagination {...paginationProps} />
           <div className="read-books-list">
             {readBooks.map(item => (
               <ReadBookItem key={item.id} item={item} onUnmarked={removeItem} />
             ))}
           </div>
-
-          <InfiniteScrollSentinel onVisible={loadMore} disabled={!hasMore || loadingMore} />
-
-          {loadingMore && (
-            <p style={{ color: 'var(--color-text-3)', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
-              Loading more...
-            </p>
-          )}
-          {!hasMore && readBooks.length > 0 && (
-            <p style={{ color: 'var(--color-text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
-              All {total} book{total !== 1 ? 's' : ''} loaded
-            </p>
-          )}
+          <Pagination {...paginationProps} />
         </>
       )}
     </div>

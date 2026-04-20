@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import WishlistItem from '../components/WishlistItem';
-import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
-import { useInfiniteList } from '../hooks/useInfiniteList';
+import Pagination from '../components/Pagination';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 function IconHeart() {
   return (
@@ -15,9 +15,9 @@ function IconHeart() {
 
 export default function Wishlist() {
   const {
-    items: wishlist, total, loading, loadingMore, hasMore, error,
-    limit, setLimit, loadMore, removeItem,
-  } = useInfiniteList('/wishlist');
+    items: wishlist, total, totalPages, loading, error,
+    limit, setLimit, page, firstPage, prevPage, nextPage, lastPage, removeItem,
+  } = usePaginatedList('/wishlist');
 
   const [readBooksMap, setReadBooksMap] = useState(new Map());
 
@@ -45,6 +45,8 @@ export default function Wishlist() {
       return next;
     });
   }
+
+  const paginationProps = { page, totalPages, total, limit, onFirst: firstPage, onPrev: prevPage, onNext: nextPage, onLast: lastPage };
 
   return (
     <div className="wishlist-content">
@@ -90,6 +92,7 @@ export default function Wishlist() {
         </div>
       ) : (
         <>
+          <Pagination {...paginationProps} />
           <div className="wishlist-list">
             {wishlist.map(item => (
               <WishlistItem
@@ -102,19 +105,7 @@ export default function Wishlist() {
               />
             ))}
           </div>
-
-          <InfiniteScrollSentinel onVisible={loadMore} disabled={!hasMore || loadingMore} />
-
-          {loadingMore && (
-            <p style={{ color: 'var(--color-text-3)', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
-              Loading more...
-            </p>
-          )}
-          {!hasMore && wishlist.length > 0 && (
-            <p style={{ color: 'var(--color-text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
-              All {total} book{total !== 1 ? 's' : ''} loaded
-            </p>
-          )}
+          <Pagination {...paginationProps} />
         </>
       )}
     </div>

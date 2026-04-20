@@ -595,6 +595,41 @@ a:hover {
   border-color: var(--color-accent);
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 0 8px;
+}
+
+.pagination-range {
+  color: var(--color-text-2);
+  font-size: 14px;
+  margin-right: 4px;
+}
+
+.pagination-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-2);
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  color: var(--color-text-1);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ============================================================
    CARDS GRID
    ============================================================ */
