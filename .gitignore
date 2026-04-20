@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.playwright-mcp
 
 # Environment files
 .env
@@ -12,6 +13,9 @@ frontend/dist/
 # Logs
 *.log
 npm-debug.log*
+
+# Scratch files
+enriched_books.csv
 
 # OS files
 .DS_Store
