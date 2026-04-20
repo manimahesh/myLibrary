@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ReadDatePicker from './ReadDatePicker';
 
+function toDisplayTitle(title) {
+  if (!title || title.length <= 2) return title;
+  if (title === title.toUpperCase()) {
+    return title.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return title;
+}
+
 export default function BookCard({ book, inWishlist = false, onAdded, inReadBooks = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
@@ -101,7 +109,7 @@ export default function BookCard({ book, inWishlist = false, onAdded, inReadBook
         )}
       </div>
       <div className="book-card-info">
-        <h3 className="book-card-title">{book.title}</h3>
+        <h3 className="book-card-title">{toDisplayTitle(book.title)}</h3>
         <p className="book-card-author">{book.author}</p>
         {error && <p className="book-card-error">{error}</p>}
         <button

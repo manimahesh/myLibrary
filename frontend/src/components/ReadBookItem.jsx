@@ -25,7 +25,14 @@ export default function ReadBookItem({ item, onUnmarked }) {
     }
   }
 
-  const title = book?.title || item.book_id;
+  const rawTitle = book?.title || item.book_id;
+  const title = (() => {
+    if (!rawTitle || rawTitle.length <= 2) return rawTitle;
+    if (rawTitle.startsWith('isbn:')) return rawTitle.replace(/^isbn:/, 'ISBN: ');
+    if (rawTitle.startsWith('nyt-rank:')) return rawTitle.replace(/^nyt-rank:/, 'NYT Rank: ');
+    if (rawTitle === rawTitle.toUpperCase()) return rawTitle.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    return rawTitle;
+  })();
   const author = book?.author || '';
   const thumbnail = book?.thumbnail || null;
   const readDate = new Date(item.read_at).toLocaleDateString(undefined, {

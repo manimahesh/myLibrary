@@ -113,7 +113,7 @@ export default function PaymentMethodList() {
           </div>
           <h3>No payment methods yet</h3>
           <p>Add a credit or debit card to speed up checkout.</p>
-          <button className="btn btn-secondary" onClick={() => setShowForm(true)}>
+          <button className="btn btn-primary" style={{ width: 'auto' }} onClick={() => setShowForm(true)}>
             Add your first card
           </button>
         </div>

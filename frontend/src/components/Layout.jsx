@@ -45,14 +45,6 @@ function IconUser() {
   );
 }
 
-function IconCard() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-      <line x1="1" y1="10" x2="23" y2="10" />
-    </svg>
-  );
-}
 
 function IconCheck() {
   return (
@@ -67,10 +59,20 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const initial = user?.email?.[0]?.toUpperCase() ?? '?';
+  const initial = (() => {
+    if (user?.first_name && user?.last_name) {
+      return (user.first_name[0] + user.last_name[0]).toUpperCase();
+    }
+    if (user?.first_name) return user.first_name[0].toUpperCase();
+    const email = user?.email;
+    if (!email) return '?';
+    const local = email.split('@')[0].replace(/[^a-zA-Z]/g, '');
+    const parts = email.split('@')[0].split(/[._-]/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return local.length >= 2 ? (local[0] + local[1]).toUpperCase() : local[0].toUpperCase();
+  })();
   const params = new URLSearchParams(location.search);
   const isSearchFocus = location.pathname === '/store' && params.get('focus') === 'search';
-  const isPaymentsTab = location.pathname === '/profile' && params.get('tab') === 'payments';
 
   const isActive = (path) => location.pathname === path;
 
@@ -78,9 +80,8 @@ export default function Layout({ children }) {
     { label: 'Store', to: '/store', icon: <IconStore />, active: isActive('/store') && !isSearchFocus },
     { label: 'Search', to: '/store?focus=search', icon: <IconSearch />, active: isSearchFocus },
     { label: 'Wishlist', to: '/wishlist', icon: <IconHeart />, active: isActive('/wishlist') },
-    { label: 'Read Books', to: '/read-books', icon: <IconCheck />, active: isActive('/read-books') },
-    { label: 'Profile', to: '/profile', icon: <IconUser />, active: isActive('/profile') && !isPaymentsTab },
-    { label: 'Payment Methods', to: '/profile?tab=payments', icon: <IconCard />, active: isPaymentsTab },
+    { label: "Books I've Read", to: '/read-books', icon: <IconCheck />, active: isActive('/read-books') },
+    { label: 'Profile', to: '/profile', icon: <IconUser />, active: isActive('/profile') },
   ];
 
   return (
@@ -105,13 +106,15 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="app-sidebar-footer">
-          {user && <span className="app-sidebar-email">{user.email}</span>}
           <div className="app-sidebar-user-row">
             <div className="navbar-avatar">{initial}</div>
-            <button className="btn btn-secondary btn-sm" onClick={() => { logout(); navigate('/login'); }}>
-              Sign out
-            </button>
+            <div className="app-sidebar-user-info">
+              {user && <span className="app-sidebar-email">{user.email}</span>}
+            </div>
           </div>
+          <button className="btn btn-ghost btn-sm app-sidebar-signout" onClick={() => { logout(); navigate('/login'); }}>
+            Sign out
+          </button>
         </div>
       </aside>
 

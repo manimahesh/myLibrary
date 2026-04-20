@@ -1,4 +1,4 @@
-const { hashPassword, comparePassword, generateToken, verifyToken, registerSchema, loginSchema } = require('../../utils/auth');
+const { hashPassword, comparePassword, generateToken, verifyToken, registerSchema, loginSchema, updateProfileSchema, changePasswordSchema } = require('../../utils/auth');
 
 describe('hashPassword / comparePassword', () => {
   it('hashes a password and verifies it correctly', async () => {
@@ -59,6 +59,45 @@ describe('loginSchema', () => {
 
   it('rejects missing password', () => {
     const { error } = loginSchema.validate({ email: 'user@example.com' });
+    expect(error).toBeDefined();
+  });
+});
+
+describe('updateProfileSchema', () => {
+  it('accepts first_name and last_name', () => {
+    const { error } = updateProfileSchema.validate({ first_name: 'Jane', last_name: 'Smith' });
+    expect(error).toBeUndefined();
+  });
+
+  it('accepts empty strings', () => {
+    const { error } = updateProfileSchema.validate({ first_name: '', last_name: '' });
+    expect(error).toBeUndefined();
+  });
+
+  it('accepts an empty object (both optional)', () => {
+    const { error } = updateProfileSchema.validate({});
+    expect(error).toBeUndefined();
+  });
+
+  it('rejects first_name longer than 100 chars', () => {
+    const { error } = updateProfileSchema.validate({ first_name: 'A'.repeat(101) });
+    expect(error).toBeDefined();
+  });
+});
+
+describe('changePasswordSchema', () => {
+  it('accepts valid current and new passwords', () => {
+    const { error } = changePasswordSchema.validate({ current_password: 'oldpass1', new_password: 'newpass1' });
+    expect(error).toBeUndefined();
+  });
+
+  it('rejects missing current_password', () => {
+    const { error } = changePasswordSchema.validate({ new_password: 'newpass1' });
+    expect(error).toBeDefined();
+  });
+
+  it('rejects new_password shorter than 8 chars', () => {
+    const { error } = changePasswordSchema.validate({ current_password: 'oldpass1', new_password: 'short' });
     expect(error).toBeDefined();
   });
 });

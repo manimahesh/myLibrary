@@ -123,7 +123,8 @@ export default function BookDetail() {
   if (loading) {
     return (
       <div className="book-detail-content">
-        <p style={{ color: 'var(--color-text-3)', fontSize: 14 }}>Loading book details...</p>
+        <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
+        <p style={{ color: 'var(--color-text-3)', fontSize: 14, marginTop: 8 }}>Loading book details...</p>
       </div>
     );
   }
@@ -132,7 +133,14 @@ export default function BookDetail() {
     return (
       <div className="book-detail-content">
         <button className="book-detail-back" onClick={() => navigate(-1)}>← Back</button>
-        <p className="server-error">{error || 'Book not found.'}</p>
+        <div className="book-detail-error">
+          <div className="book-detail-error-icon">!</div>
+          <h3>Something went wrong</h3>
+          <p>{error || 'Book not found.'}</p>
+          <button className="btn btn-secondary" style={{ width: 'auto', marginTop: 4 }} onClick={() => navigate(-1)}>
+            Go back
+          </button>
+        </div>
       </div>
     );
   }

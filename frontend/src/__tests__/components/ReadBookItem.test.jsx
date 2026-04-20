@@ -64,4 +64,22 @@ describe('ReadBookItem', () => {
     fireEvent.click(screen.getByRole('button', { name: /Unmark as Read/i }));
     expect(api.delete).not.toHaveBeenCalled();
   });
+
+  it('normalises isbn: prefix in title', async () => {
+    api.get.mockResolvedValue({ data: { book: { title: 'isbn:9780743273565', author: 'F. Scott Fitzgerald', thumbnail: null } } });
+    renderItem();
+    await waitFor(() => expect(screen.getByText('ISBN: 9780743273565')).toBeInTheDocument());
+  });
+
+  it('normalises nyt-rank: prefix in title', async () => {
+    api.get.mockResolvedValue({ data: { book: { title: 'nyt-rank:3', author: 'Unknown', thumbnail: null } } });
+    renderItem();
+    await waitFor(() => expect(screen.getByText('NYT Rank: 3')).toBeInTheDocument());
+  });
+
+  it('converts ALL_CAPS title to title case', async () => {
+    api.get.mockResolvedValue({ data: { book: { title: 'THE GREAT GATSBY', author: 'Fitzgerald', thumbnail: null } } });
+    renderItem();
+    await waitFor(() => expect(screen.getByText('The Great Gatsby')).toBeInTheDocument());
+  });
 });

@@ -165,7 +165,15 @@ export default function WishlistItem({ item, onRemoved, isRead = false, readBook
     }
   }
 
-  const title = book?.title || item.book_id;
+  function toDisplayTitle(raw) {
+    if (!raw || raw.length <= 2) return raw;
+    if (raw.startsWith('isbn:')) return raw.replace(/^isbn:/, 'ISBN: ');
+    if (raw.startsWith('nyt-rank:')) return raw.replace(/^nyt-rank:/, 'NYT Rank: ');
+    if (raw === raw.toUpperCase()) return raw.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    return raw;
+  }
+
+  const title = toDisplayTitle(book?.title || item.book_id);
   const author = book?.author || '';
   const thumbnail = book?.thumbnail || null;
 
