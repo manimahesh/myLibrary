@@ -567,6 +567,34 @@ a:hover {
   margin-top: 3px;
 }
 
+.list-count {
+  color: var(--color-text-3);
+  font-size: 13px;
+}
+
+.per-page-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.per-page-picker select {
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-2);
+  color: var(--color-text-1);
+  cursor: pointer;
+}
+
+.per-page-picker select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
 /* ============================================================
    CARDS GRID
    ============================================================ */

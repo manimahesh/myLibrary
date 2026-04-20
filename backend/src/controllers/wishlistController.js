@@ -1,4 +1,5 @@
 const Wishlist = require('../models/Wishlist');
+const { getBookDetails } = require('../services/googleBooksService');
 const Joi = require('joi');
 const { validate: isValidUUID } = require('uuid');
 
@@ -12,8 +13,10 @@ const ratingSchema = Joi.object({
 
 async function list(req, res) {
   try {
-    const wishlist = await Wishlist.findAllByUser(req.user.userId);
-    res.json({ wishlist });
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 25);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const { items, total } = await Wishlist.findPageByUser(req.user.userId, limit, offset);
+    res.json({ wishlist: items, total, limit, offset });
   } catch (err) {
     console.error('List wishlist error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -33,6 +36,10 @@ async function add(req, res) {
     }
 
     const item = await Wishlist.create(req.user.userId, value.book_id);
+
+    // Warm the DB book cache so future list loads don't need to hit Google
+    getBookDetails(value.book_id).catch(() => {});
+
     res.status(201).json({ item });
   } catch (err) {
     console.error('Add to wishlist error:', err);

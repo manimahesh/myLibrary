@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import WishlistItem from '../components/WishlistItem';
 import api from '../services/api';
+import WishlistItem from '../components/WishlistItem';
+import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
+import { useInfiniteList } from '../hooks/useInfiniteList';
 
 function IconHeart() {
   return (
@@ -12,54 +14,34 @@ function IconHeart() {
 }
 
 export default function Wishlist() {
-  const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  // Map<book_id, read_book_id>
+  const {
+    items: wishlist, total, loading, loadingMore, hasMore, error,
+    limit, setLimit, loadMore, removeItem,
+  } = useInfiniteList('/wishlist');
+
   const [readBooksMap, setReadBooksMap] = useState(new Map());
 
   useEffect(() => {
     let active = true;
-
-    async function load() {
-      try {
-        const res = await api.get('/wishlist');
+    api.get('/read-books?limit=25&offset=0')
+      .then(res => {
         if (!active) return;
-        const wishlistData = res.data.wishlist;
-        setWishlist(Array.isArray(wishlistData) ? wishlistData : []);
-      } catch {
-        if (active) setError('Failed to load wishlist.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    async function loadReadBooks() {
-      try {
-        const res = await api.get('/read-books');
-        if (active) setReadBooksMap(new Map(res.data.readBooks.map(i => [i.book_id, i.id])));
-      } catch {
-        // read status is non-critical
-      }
-    }
-
-    load();
-    loadReadBooks();
+        const map = new Map((res.data.readBooks || []).map(i => [i.book_id, i.id]));
+        setReadBooksMap(map);
+      })
+      .catch(() => {});
     return () => { active = false; };
   }, []);
 
   function handleRemoved(id) {
-    setWishlist((prev) => prev.filter((item) => item.id !== id));
+    removeItem(id);
   }
 
   function handleReadToggle(bookId, newReadBookId) {
     setReadBooksMap(prev => {
       const next = new Map(prev);
-      if (newReadBookId) {
-        next.set(bookId, newReadBookId);
-      } else {
-        next.delete(bookId);
-      }
+      if (newReadBookId) next.set(bookId, newReadBookId);
+      else next.delete(bookId);
       return next;
     });
   }
@@ -69,11 +51,28 @@ export default function Wishlist() {
       <div className="section-header">
         <div>
           <h2 className="section-title">My Wishlist</h2>
-          <p className="section-desc">Books you want to read, with your personal ratings and notes</p>
+          <p className="section-desc">
+            Books you want to read, with your personal ratings and notes
+            {total !== null && <span className="list-count"> · {total} book{total !== 1 ? 's' : ''}</span>}
+          </p>
         </div>
-        <Link to="/store" className="btn btn-secondary btn-sm" style={{ width: 'auto', textDecoration: 'none' }}>
-          Browse Books
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="per-page-picker">
+            <label htmlFor="wishlist-limit">Per page</label>
+            <select
+              id="wishlist-limit"
+              value={limit}
+              onChange={e => setLimit(e.target.value)}
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
+          <Link to="/store" className="btn btn-secondary btn-sm" style={{ width: 'auto', textDecoration: 'none' }}>
+            Browse Books
+          </Link>
+        </div>
       </div>
 
       {error && <p className="server-error">{error}</p>}
@@ -82,9 +81,7 @@ export default function Wishlist() {
         <p style={{ color: 'var(--color-text-3)', fontSize: 14 }}>Loading wishlist...</p>
       ) : wishlist.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">
-            <IconHeart />
-          </div>
+          <div className="empty-state-icon"><IconHeart /></div>
           <h3>Your wishlist is empty</h3>
           <p>Browse the store and add books you want to read.</p>
           <Link to="/store" className="btn btn-primary" style={{ textDecoration: 'none', marginTop: 8 }}>
@@ -92,18 +89,33 @@ export default function Wishlist() {
           </Link>
         </div>
       ) : (
-        <div className="wishlist-list">
-          {wishlist.map((item) => (
-            <WishlistItem
-              key={item.id}
-              item={item}
-              onRemoved={handleRemoved}
-              isRead={readBooksMap.has(item.book_id)}
-              readBookId={readBooksMap.get(item.book_id) ?? null}
-              onReadToggle={handleReadToggle}
-            />
-          ))}
-        </div>
+        <>
+          <div className="wishlist-list">
+            {wishlist.map(item => (
+              <WishlistItem
+                key={item.id}
+                item={item}
+                onRemoved={handleRemoved}
+                isRead={readBooksMap.has(item.book_id)}
+                readBookId={readBooksMap.get(item.book_id) ?? null}
+                onReadToggle={handleReadToggle}
+              />
+            ))}
+          </div>
+
+          <InfiniteScrollSentinel onVisible={loadMore} disabled={!hasMore || loadingMore} />
+
+          {loadingMore && (
+            <p style={{ color: 'var(--color-text-3)', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
+              Loading more...
+            </p>
+          )}
+          {!hasMore && wishlist.length > 0 && (
+            <p style={{ color: 'var(--color-text-3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
+              All {total} book{total !== 1 ? 's' : ''} loaded
+            </p>
+          )}
+        </>
       )}
     </div>
   );

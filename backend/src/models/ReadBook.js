@@ -3,10 +3,30 @@ const db = require('../config/database');
 const ReadBook = {
   async findAllByUser(userId) {
     const result = await db.query(
-      'SELECT * FROM read_books WHERE user_id = $1 ORDER BY read_at DESC',
+      `SELECT r.*, b.title, b.author, b.thumbnail
+       FROM read_books r
+       LEFT JOIN books b ON b.book_id = r.book_id
+       WHERE r.user_id = $1
+       ORDER BY r.read_at DESC`,
       [userId]
     );
     return result.rows;
+  },
+
+  async findPageByUser(userId, limit, offset) {
+    const [dataRes, countRes] = await Promise.all([
+      db.query(
+        `SELECT r.*, b.title, b.author, b.thumbnail
+         FROM read_books r
+         LEFT JOIN books b ON b.book_id = r.book_id
+         WHERE r.user_id = $1
+         ORDER BY r.read_at DESC
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
+      ),
+      db.query('SELECT COUNT(*) FROM read_books WHERE user_id = $1', [userId]),
+    ]);
+    return { items: dataRes.rows, total: parseInt(countRes.rows[0].count, 10) };
   },
 
   async findByBookId(userId, bookId) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ReadDatePicker from './ReadDatePicker';
@@ -26,8 +26,6 @@ function StarRating({ value, onChange }) {
 
 export default function WishlistItem({ item, onRemoved, isRead = false, readBookId = null, onReadToggle }) {
   const navigate = useNavigate();
-  const [book, setBook] = useState(null);
-  const [bookLoading, setBookLoading] = useState(true);
   const [rating, setRating] = useState(item.rating || 0);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [summary, setSummary] = useState(null);
@@ -42,33 +40,19 @@ export default function WishlistItem({ item, onRemoved, isRead = false, readBook
   const [togglingRead, setTogglingRead] = useState(false);
   const [pickingDate, setPickingDate] = useState(false);
 
-  const loadBook = useCallback(async () => {
-    try {
-      const res = await api.get(`/books/${encodeURIComponent(item.book_id)}`);
-      setBook(res.data.book);
-    } catch {
-      setBook(null);
-    } finally {
-      setBookLoading(false);
-    }
-  }, [item.book_id]);
-
-  const loadSummary = useCallback(async () => {
-    try {
-      const res = await api.get(`/summaries/${encodeURIComponent(item.book_id)}`);
-      setSummary(res.data.summary);
-      if (res.data.summary) setSummaryText(res.data.summary.summary_text);
-    } catch {
-      setSummary(null);
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, [item.book_id]);
-
+  // Summary is still loaded per-item since it's user-specific
   useEffect(() => {
-    loadBook();
-    loadSummary();
-  }, [loadBook, loadSummary]);
+    let active = true;
+    api.get(`/summaries/${encodeURIComponent(item.book_id)}`)
+      .then(res => {
+        if (!active) return;
+        setSummary(res.data.summary);
+        if (res.data.summary) setSummaryText(res.data.summary.summary_text);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setSummaryLoading(false); });
+    return () => { active = false; };
+  }, [item.book_id]);
 
   async function handleRatingChange(newRating) {
     setRating(newRating);
@@ -173,16 +157,14 @@ export default function WishlistItem({ item, onRemoved, isRead = false, readBook
     return raw;
   }
 
-  const title = toDisplayTitle(book?.title || item.book_id);
-  const author = book?.author || '';
-  const thumbnail = book?.thumbnail || null;
+  const title = toDisplayTitle(item.title || item.book_id);
+  const author = item.author || '';
+  const thumbnail = item.thumbnail || null;
 
   return (
     <div className="wishlist-item">
       {/* Cover */}
-      {bookLoading ? (
-        <div className="wishlist-item-cover-placeholder" />
-      ) : thumbnail ? (
+      {thumbnail ? (
         <img
           src={thumbnail}
           alt={title}
